@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>用户注册 - 双虎人事</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        /* 简单样式，保持和登录页一致的风格 */
+        body { margin: 0; padding: 0; height: 100vh; display: flex; justify-content: center; align-items: center; background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%); font-family: sans-serif; }
+        .card { background: white; padding: 40px; border-radius: 10px; width: 350px; text-align: center; }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { display: block; margin-bottom: 5px; color: #666; font-size: 14px; }
+        .input-field { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        .btn { width: 100%; padding: 10px; background: #4facfe; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        .btn:hover { background: #00f2fe; }
+        .link { margin-top: 15px; display: block; color: #666; text-decoration: none; font-size: 14px; }
+        .error { color: red; font-size: 12px; margin-top: 5px; }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div class="card">
+        <h2>新用户注册</h2>
+
+        <div class="input-group">
+            <label>用户名 (登录账号)</label>
+            <input type="text" v-model="form.username" class="input-field" placeholder="设置用户名">
+        </div>
+
+        <div class="input-group">
+            <label>密码</label>
+            <input type="password" v-model="form.password" class="input-field" placeholder="设置密码">
+        </div>
+
+        <div class="input-group">
+            <label>关联员工工号 (选填)</label>
+            <input type="text" v-model="form.emp_id" class="input-field" placeholder="如果您是内部员工请填写ID">
+        </div>
+
+        <button class="btn" @click="handleRegister" :disabled="loading">
+            {{ loading ? '提交中...' : '立即注册' }}
+        </button>
+
+        <p class="error">{{ message }}</p>
+
+        <a href="login.html" class="link">已有账号？去登录</a>
+    </div>
+</div>
+
+<script>
+    const { createApp, reactive, ref } = Vue;
+    createApp({
+        setup() {
+            const form = reactive({
+                username: '',
+                password: '',
+                emp_id: null,
+                user_role: 3 // 默认注册为普通员工
+            });
+            const loading = ref(false);
+            const message = ref('');
+
+            const handleRegister = () => {
+                if(!form.username || !form.password) {
+                    message.value = "用户名和密码不能为空";
+                    return;
+                }
+                loading.value = true;
+
+                // 发送注册请求
+                fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(form)
+                })
+                    .then(res => res.json())
+                    .then(res => {
+                        loading.value = false;
+                        if(res.code === 0) { // 假设 Result.success 返回 code 0
+                            alert("注册成功！即将跳转登录页");
+                            window.location.href = "login.html"; // 注册成功跳回登录
+                        } else {
+                            message.value = res.msg || "注册失败";
+                        }
+                    })
+                    .catch(err => {
+                        loading.value = false;
+                        message.value = "网络错误，请稍后重试";
+                    });
+            };
+
+            return { form, loading, message, handleRegister };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

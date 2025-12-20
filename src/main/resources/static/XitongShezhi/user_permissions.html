@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>用户权限管理</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body {
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .card {
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border: none;
+            margin-bottom: 20px;
+        }
+        .table th {
+            font-weight: 500;
+        }
+        .status-active {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 3px 8px;
+            border-radius: 15px;
+            font-size: 0.85em;
+        }
+        .status-inactive {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 3px 8px;
+            border-radius: 15px;
+            font-size: 0.85em;
+        }
+        .role-tag {
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+        .btn-role {
+            cursor: pointer;
+        }
+        .permission-cell {
+            vertical-align: middle !important;
+        }
+    </style>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="text-dark font-weight-bold mb-0">
+            <i class="fas fa-users-cog mr-2"></i>用户权限管理
+        </h4>
+        <button class="btn btn-primary" onclick="showAddUserModal()">
+            <i class="fas fa-user-plus mr-1"></i>新增用户
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>用户名</th>
+                            <th>关联员工</th>
+                            <th>角色</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-table-body">
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                <i class="fas fa-spinner fa-spin mr-2"></i>正在加载用户数据...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑用户模态框 -->
+<div class="modal fade" id="editUserModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">编辑用户权限</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-user-form">
+                    <input type="hidden" id="edit-user-id">
+                    <div class="form-group">
+                        <label>用户名</label>
+                        <input type="text" class="form-control" id="edit-username" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>角色</label>
+                        <select class="form-control" id="edit-user-role">
+                            <option value="1">超级管理员</option>
+                            <option value="2">经理</option>
+                            <option value="3">员工</option>
+                            <option value="4">访客</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>状态</label>
+                        <select class="form-control" id="edit-user-status">
+                            <option value="1">启用</option>
+                            <option value="0">禁用</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="saveUserChanges()">保存更改</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 新增用户模态框 -->
+<div class="modal fade" id="addUserModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">新增用户</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="add-user-form">
+                    <div class="form-group">
+                        <label>用户名 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="add-username" required>
+                    </div>
+                    <div class="form-group">
+                        <label>密码 <span class="text-danger">*</span></label>
+                        <input type="password" class="form-control" id="add-password" required>
+                    </div>
+                    <div class="form-group">
+                        <label>关联员工ID</label>
+                        <input type="number" class="form-control" id="add-emp-id">
+                    </div>
+                    <div class="form-group">
+                        <label>角色</label>
+                        <select class="form-control" id="add-user-role">
+                            <option value="2">经理</option>
+                            <option value="3" selected>员工</option>
+                            <option value="4">访客</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="addNewUser()">创建用户</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // 角色映射
+    const roleMap = {
+        1: '<span class="role-tag" style="background-color: #fff3cd; color: #856404;">超级管理员</span>',
+        2: '<span class="role-tag" style="background-color: #cce5ff; color: #004085;">经理</span>',
+        3: '<span class="role-tag" style="background-color: #d1ecf1; color: #0c5460;">员工</span>',
+        4: '<span class="role-tag" style="background-color: #f8d7da; color: #721c24;">访客</span>'
+    };
+
+    // 当前登录用户信息（模拟）
+    let currentUser = {
+        role: 1 // 假设当前用户是超级管理员
+    };
+
+    // 页面加载完成后获取用户列表
+    document.addEventListener('DOMContentLoaded', function() {
+        loadUsers();
+    });
+
+    // 加载用户列表
+    function loadUsers() {
+        fetch('/api/users')
+            .then(response => response.json())
+            .then(data => {
+                const tbody = document.getElementById('users-table-body');
+                
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">暂无用户数据</td></tr>';
+                    return;
+                }
+
+                let html = '';
+                data.forEach(user => {
+                    html += `
+                        <tr>
+                            <td>${user.user_id}</td>
+                            <td>${user.username}</td>
+                            <td>${user.emp_name || '无关联'}</td>
+                            <td class="permission-cell">${roleMap[user.user_role]}</td>
+                            <td class="permission-cell">
+                                ${user.user_status == 1 ? 
+                                  '<span class="status-active">启用</span>' : 
+                                  '<span class="status-inactive">禁用</span>'}
+                            </td>
+                            <td class="permission-cell">
+                                ${currentUser.role === 1 ? 
+                                  `<button class="btn btn-sm btn-outline-primary" onclick="editUser(${user.user_id})">
+                                      <i class="fas fa-edit"></i> 编辑
+                                   </button>` : 
+                                  `<button class="btn btn-sm btn-outline-secondary" disabled>
+                                      <i class="fas fa-edit"></i> 无权限
+                                   </button>`}
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                tbody.innerHTML = html;
+            })
+            .catch(error => {
+                console.error('获取用户列表失败:', error);
+                document.getElementById('users-table-body').innerHTML = 
+                    '<tr><td colspan="6" class="text-center text-danger py-4">加载用户数据失败</td></tr>';
+            });
+    }
+
+    // 编辑用户
+    function editUser(userId) {
+        fetch(`/api/user/${userId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const user = data.data;
+                    document.getElementById('edit-user-id').value = user.user_id;
+                    document.getElementById('edit-username').value = user.username;
+                    document.getElementById('edit-user-role').value = user.user_role;
+                    document.getElementById('edit-user-status').value = user.user_status;
+                    $('#editUserModal').modal('show');
+                } else {
+                    alert('获取用户信息失败: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('获取用户信息失败:', error);
+                alert('获取用户信息失败，请查看控制台了解详情');
+            });
+    }
+
+    // 保存用户变更
+    function saveUserChanges() {
+        const userId = document.getElementById('edit-user-id').value;
+        const userData = {
+            user_id: userId,
+            user_role: document.getElementById('edit-user-role').value,
+            user_status: document.getElementById('edit-user-status').value
+        };
+
+        fetch(`/api/user/update`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(userData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('用户信息更新成功');
+                $('#editUserModal').modal('hide');
+                loadUsers(); // 重新加载用户列表
+            } else {
+                alert('更新失败: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('更新用户信息失败:', error);
+            alert('更新用户信息失败，请查看控制台了解详情');
+        });
+    }
+
+    // 显示新增用户模态框
+    function showAddUserModal() {
+        if (currentUser.role !== 1) {
+            alert('只有超级管理员才能添加新用户！');
+            return;
+        }
+        
+        document.getElementById('add-user-form').reset();
+        $('#addUserModal').modal('show');
+    }
+
+    // 添加新用户
+    function addNewUser() {
+        if (currentUser.role !== 1) {
+            alert('只有超级管理员才能添加新用户！');
+            return;
+        }
+        
+        const username = document.getElementById('add-username').value.trim();
+        const password = document.getElementById('add-password').value;
+        const empId = document.getElementById('add-emp-id').value;
+        const userRole = document.getElementById('add-user-role').value;
+
+        if (!username || !password) {
+            alert('用户名和密码不能为空！');
+            return;
+        }
+
+        const newUser = {
+            username: username,
+            password: password,
+            emp_id: empId ? parseInt(empId) : null,
+            user_role: parseInt(userRole),
+            user_status: 1 // 默认启用
+        };
+
+        fetch('/api/user/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(newUser)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('用户创建成功');
+                $('#addUserModal').modal('hide');
+                loadUsers(); // 重新加载用户列表
+            } else {
+                alert('创建失败: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('创建用户失败:', error);
+            alert('创建用户失败，请查看控制台了解详情');
+        });
+    }
+</script>
+</body>
+</html>

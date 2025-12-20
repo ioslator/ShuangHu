@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>公告管理</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+    <style>body{padding:20px;background:#f8f9fa;} .btn-action{margin-right: 5px;}</style>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4>公告列表</h4>
+        <a href="notice_publish.html" class="btn btn-success btn-sm">发布新公告</a>
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="bg-light">
+                <tr>
+                    <th style="width: 50px;">ID</th>
+                    <th>标题</th>
+                    <th>发布部门</th>
+                    <th>发布时间</th>
+                    <th style="width: 250px;">操作</th>
+                </tr>
+                </thead>
+                <tbody id="noticeList">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="noticeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">公告详情</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="noticeForm">
+                    <input type="hidden" id="noticeId">
+                    <div class="form-group">
+                        <label>公告标题</label>
+                        <input type="text" class="form-control" id="inputTitle">
+                    </div>
+                    <div class="form-group">
+                        <label>发布部门</label>
+                        <input type="text" class="form-control" id="inputDept">
+                    </div>
+                    <div class="form-group">
+                        <label>公告内容</label>
+                        <textarea class="form-control" id="inputContent" rows="8"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-primary" id="btnSave" onclick="saveNotice()" style="display:none;">保存修改</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 页面加载
+    loadList();
+
+    function loadList() {
+        fetch('/api/notice/list')
+            .then(r => r.json())
+            .then(res => {
+                if(res.success && res.data){
+                    const html = res.data.map(i => `
+                        <tr>
+                            <td>${i.notice_id}</td>
+                            <td><a href="javascript:void(0)" onclick="viewNotice(${i.notice_id})"><b>${i.notice_title}</b></a></td>
+                            <td>${i.publish_dept || '系统'}</td>
+                            <td>${i.create_time ? i.create_time.replace('T',' ') : ''}</td>
+                            <td>
+                                <button class="btn btn-info btn-sm btn-action" onclick="viewNotice(${i.notice_id})">查看</button>
+                                <button class="btn btn-primary btn-sm btn-action" onclick="editNotice(${i.notice_id})">编辑</button>
+                                <button class="btn btn-danger btn-sm btn-action" onclick="deleteNotice(${i.notice_id})">删除</button>
+                            </td>
+                        </tr>
+                    `).join('');
+                    document.getElementById('noticeList').innerHTML = html;
+                } else {
+                    document.getElementById('noticeList').innerHTML = '<tr><td colspan="5" class="text-center">暂无数据</td></tr>';
+                }
+            });
+    }
+
+    // 查看详情
+    function viewNotice(id) {
+        fetch('/api/notice/detail?id=' + id)
+            .then(r => r.json())
+            .then(res => {
+                const d = res.data;
+                fillModal(d, '公告详情');
+                setReadOnly(true);
+                $('#btnSave').hide();
+                $('#noticeModal').modal('show');
+            });
+    }
+
+    // 编辑
+    function editNotice(id) {
+        fetch('/api/notice/detail?id=' + id)
+            .then(r => r.json())
+            .then(res => {
+                const d = res.data;
+                fillModal(d, '编辑公告');
+                setReadOnly(false);
+                $('#btnSave').show();
+                $('#noticeModal').modal('show');
+            });
+    }
+
+    // 保存修改 (关键：这里构建的 JSON 对象 key 必须和 Java 字段一致)
+    function saveNotice() {
+        const data = {
+            notice_id: document.getElementById('noticeId').value,
+            notice_title: document.getElementById('inputTitle').value,
+            publish_dept: document.getElementById('inputDept').value,
+            notice_content: document.getElementById('inputContent').value
+        };
+
+        fetch('/api/notice/update', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        }).then(r => r.json()).then(res => {
+            if(res.success){ alert('保存成功'); $('#noticeModal').modal('hide'); loadList(); }
+        });
+    }
+
+    // 删除
+    function deleteNotice(id) {
+        if(confirm('确定删除?')) {
+            fetch('/api/notice/delete?id=' + id, { method: 'POST' })
+                .then(r => r.json()).then(res => { if(res.success) loadList(); });
+        }
+    }
+
+    // 数据回填 (字段名修正)
+    function fillModal(d, title) {
+        document.getElementById('modalTitle').innerText = title;
+        document.getElementById('noticeId').value = d.notice_id;
+        document.getElementById('inputTitle').value = d.notice_title;
+        document.getElementById('inputDept').value = d.publish_dept;
+        document.getElementById('inputContent').value = d.notice_content;
+    }
+
+    function setReadOnly(state) {
+        document.getElementById('inputTitle').readOnly = state;
+        document.getElementById('inputDept').readOnly = state;
+        document.getElementById('inputContent').readOnly = state;
+    }
+</script>
+</body>
+</html>

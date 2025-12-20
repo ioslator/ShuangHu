@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>添加员工</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body { background-color: #f8f9fa; padding: 20px; }
+
+        /* 卡片整体风格 */
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        /* 标题栏渐变 */
+        .card-header {
+            background: linear-gradient(135deg, #0062E6, #33AEFF);
+            color: white;
+            padding: 15px 25px;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        /* 分区标题样式 */
+        .section-label {
+            color: #2c3e50;
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            padding-left: 10px;
+            border-left: 5px solid #007bff; /* 左侧蓝条 */
+            display: flex;
+            align-items: center;
+        }
+
+        /* 表单控件优化 */
+        .input-group-text {
+            background-color: #f8f9fa;
+            border-color: #ced4da;
+            color: #6c757d;
+            width: 45px; /* 统一图标宽度 */
+            justify-content: center;
+        }
+
+        .form-control:focus {
+            border-color: #33AEFF;
+            box-shadow: 0 0 0 0.2rem rgba(51, 174, 255, 0.25);
+        }
+
+        /* 必填星号 */
+        .required-star { color: #ff4d4f; margin-left: 4px; font-weight: bold; }
+
+        /* 提示文字 */
+        .help-text { font-size: 0.8rem; color: #888; margin-top: 4px; }
+
+        /* 底部按钮栏 */
+        .form-footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: right;
+            border-top: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-11"> <div class="card">
+            <div class="card-header">
+                <i class="fas fa-user-plus mr-2"></i> 新增员工入职档案
+            </div>
+
+            <div id="loadingMask" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.7); z-index:10; text-align:center; padding-top:200px;">
+                <div class="spinner-border text-primary" role="status"></div>
+                <div class="mt-2 font-weight-bold">正在提交数据...</div>
+            </div>
+
+            <div class="card-body p-4">
+                <form id="addEmployeeForm" onsubmit="return false;"> <div class="section-label">核心信息 (必填)</div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label>员工姓名 <span class="required-star">*</span></label>
+                            <div class="input-group">
+                                <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-user"></i></span></div>
+                                <input type="text" class="form-control" id="emp_name" name="emp_name" placeholder="请输入真实姓名" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group col-md-4">
+                            <label>分配工号 <span class="required-star">*</span></label>
+                            <div class="input-group">
+                                <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-id-badge"></i></span></div>
+                                <input type="text" class="form-control" id="emp_no" name="emp_no" placeholder="例: EMP2025001" required>
+                            </div>
+                            <div class="help-text">工号需唯一，不可重复</div>
+                        </div>
+
+                        <div class="form-group col-md-4">
+                            <label>性别 <span class="required-star">*</span></label>
+                            <div class="input-group">
+                                <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-venus-mars"></i></span></div>
+                                <select class="form-control" id="gender" name="gender" required>
+                                    <option value="" disabled selected>请选择...</option>
+                                    <option value="男">男</option>
+                                    <option value="女">女</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label>所属部门 <span class="required-star">*</span></label>
+                            <div class="input-group">
+                                <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-sitemap"></i></span></div>
+                                <select class="form-control" id="dept_id" name="dept_id" required>
+                                    <option value="">加载中...</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group col-md-4">
+                            <label>担任职位 <span class="required-star">*</span></label>
+                            <div class="input-group">
+                                <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-briefcase"></i></span></div>
+                                <select class="form-control" id="title_id" name="title_id" required>
+                                    <option value="">加载中...</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group col-md-4">
+                            <label>入职日期 <span class="required-star">*</span></label>
+                            <div class="input-group">
+                                <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-calendar-alt"></i></span></div>
+                                <input type="date" class="form-control" id="hire_date" name="hire_date" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="section-label">详细档案 (选填)</div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>身份证号</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-id-card"></i></span></div>
+                                <input type="text" class="form-control" id="id_card" name="id_card" placeholder="18位身份证号码">
+                            </div>
+                        </div>
+
+                        <div class="form-group col-md-3">
+                            <label>最高学历</label>
+                            <select class="form-control" id="education" name="education">
+                                <option value="">请选择...</option>
+                                <option value="博士">博士</option>
+                                <option value="硕士">硕士</option>
+                                <option value="本科">本科</option>
+                                <option value="大专">大专</option>
+                                <option value="高中及以下">高中及以下</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group col-md-3">
+                            <label>出生日期</label>
+                            <input type="date" class="form-control" id="birth_date" name="birth_date">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>手机号码</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-mobile-alt"></i></span></div>
+                                <input type="tel" class="form-control" id="emp_phone" name="emp_phone" placeholder="11位手机号码">
+                            </div>
+                        </div>
+
+                        <div class="form-group col-md-6">
+                            <label>电子邮箱</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-envelope"></i></span></div>
+                                <input type="email" class="form-control" id="emp_email" name="emp_email" placeholder="example@company.com">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>家庭/居住地址</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span></div>
+                            <input type="text" class="form-control" id="emp_address" name="emp_address" placeholder="请输入详细地址">
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+
+            <div class="form-footer">
+                <button type="button" class="btn btn-secondary mr-2" onclick="document.getElementById('addEmployeeForm').reset()">
+                    <i class="fas fa-undo"></i> 重置
+                </button>
+                <button type="button" class="btn btn-primary px-4" onclick="confirmAndSave()">
+                    <i class="fas fa-save"></i> 立即录入
+                </button>
+            </div>
+        </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        loadDropdowns();
+        document.getElementById('hire_date').valueAsDate = new Date();
+    });
+
+    // 加载下拉框数据 (保持不变)
+    function loadDropdowns() {
+        fetch('/api/departments').then(res => res.json()).then(data => {
+            const select = document.getElementById('dept_id');
+            select.innerHTML = '<option value="">请选择部门...</option>';
+            data.forEach(item => { select.innerHTML += `<option value="${item.dept_id}">${item.dept_name}</option>`; });
+        });
+        fetch('/api/titles').then(res => res.json()).then(data => {
+            const select = document.getElementById('title_id');
+            select.innerHTML = '<option value="">请选择职位...</option>';
+            data.forEach(item => { select.innerHTML += `<option value="${item.title_id}">${item.title_name}</option>`; });
+        });
+    }
+
+    // 【前端核心校验逻辑】
+    function validateForm() {
+        // 1. 必填校验 (虽然 input 有 required 属性，但手动检查更可控)
+        const requiredFields = {
+            'emp_name': '员工姓名',
+            'emp_no': '分配工号',
+            'gender': '性别',
+            'dept_id': '所属部门',
+            'title_id': '担任职位',
+            'hire_date': '入职日期'
+        };
+
+        for (let id in requiredFields) {
+            const el = document.getElementById(id);
+            if (!el.value || el.value.trim() === '') {
+                alert(`请填写或选择：${requiredFields[id]}`);
+                el.focus();
+                return false;
+            }
+        }
+
+        // 2. 格式校验 (正则)
+
+        // 手机号校验 (如果有填，才校验)
+        const phone = document.getElementById('emp_phone').value;
+        if (phone && !/^1[3-9]\d{9}$/.test(phone)) {
+            alert('手机号码格式不正确！请输入11位有效的手机号。');
+            document.getElementById('emp_phone').focus();
+            return false;
+        }
+
+        // 邮箱校验
+        const email = document.getElementById('emp_email').value;
+        if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            alert('电子邮箱格式不正确！');
+            document.getElementById('emp_email').focus();
+            return false;
+        }
+
+        // 身份证校验
+        const idCard = document.getElementById('id_card').value;
+        if (idCard && !/(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/.test(idCard)) {
+            alert('身份证号码格式不正确！');
+            document.getElementById('id_card').focus();
+            return false;
+        }
+
+        return true; // 所有校验通过
+    }
+
+    function confirmAndSave() {
+        // 1. 先执行前端校验，如果不通过直接停止
+        if (!validateForm()) {
+            return;
+        }
+
+        const name = document.getElementById('emp_name').value;
+
+        // 2. 用户确认
+        if (!confirm(`【最终确认】\n\n即将录入新员工：${name}\n\n请确认信息无误，继续吗？`)) {
+            return;
+        }
+
+        // 3. 提交后端
+        document.getElementById('loadingMask').style.display = 'block';
+        const form = document.getElementById('addEmployeeForm');
+        const formData = new FormData(form);
+        const params = new URLSearchParams(formData).toString();
+
+        fetch('api/employee/add?' + params, { method: 'POST' })
+            .then(res => res.json())
+            .then(result => {
+                document.getElementById('loadingMask').style.display = 'none';
+
+                if (result.success) {
+                    alert('🎉 ' + result.message);
+                    form.reset();
+                    document.getElementById('hire_date').valueAsDate = new Date();
+                } else {
+                    // 后端校验不通过，显示后端返回的错误信息
+                    alert('❌ ' + result.message);
+                }
+            })
+            .catch(e => {
+                document.getElementById('loadingMask').style.display = 'none';
+                alert('❌ 网络请求错误');
+            });
+    }
+</script>
+</body>
+</html>

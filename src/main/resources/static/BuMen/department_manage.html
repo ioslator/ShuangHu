@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>部门管理</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body { background-color: #f8f9fa; padding: 20px; }
+    </style>
+</head>
+<body>
+<div class="container-fluid">
+    <h4 class="mb-4 text-dark">组织架构管理</h4>
+
+    <div class="row mb-4">
+        <div class="col-12 text-right">
+            <button class="btn btn-success" onclick="openAddModal()"><i class="fas fa-plus"></i> 添加部门</button>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="bg-light">
+                <tr>
+                    <th>ID</th>
+                    <th>部门名称</th>
+                    <th>负责人</th>
+                    <th>联系电话</th>
+                    <th>操作</th>
+                </tr>
+                </thead>
+                <tbody id="deptTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deptModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">新增部门</h5>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <form id="deptForm">
+                    <div class="form-group">
+                        <label>部门名称</label>
+                        <input type="text" class="form-control" id="input-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>负责人 (ID/姓名)</label>
+                        <input type="text" class="form-control" id="input-leader">
+                    </div>
+                    <div class="form-group">
+                        <label>联系电话</label>
+                        <input type="text" class="form-control" id="input-phone">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="addDept()">提交</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // 页面加载完成后立即加载列表
+    document.addEventListener("DOMContentLoaded", function() {
+        loadDepartments();
+    });
+
+    // 1. 加载列表
+    function loadDepartments() {
+        fetch('/api/dept/list')
+            .then(res => res.json())
+            .then(res => {
+                // ✅ 修复点：现在能找到 tbody 了
+                const tbody = document.getElementById("deptTableBody");
+                if (!tbody) return;
+                tbody.innerHTML = "";
+
+                if (res.success && res.data && res.data.length > 0) {
+                    res.data.forEach(dept => {
+                        const tr = document.createElement("tr");
+                        // 字段名必须和数据库/Java实体类一致
+                        tr.innerHTML = `
+                            <td>${dept.dept_id}</td>
+                            <td><b>${dept.dept_name}</b></td>
+                            <td>${dept.dept_manage_id || '<span class="text-muted">暂无</span>'}</td>
+                            <td>${dept.dept_desc || '-'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-danger" onclick="deleteDept(${dept.dept_id})">删除</button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center">暂无部门数据</td></tr>';
+                }
+            });
+    }
+
+    function openAddModal() {
+        $('#deptModal').modal('show');
+    }
+
+    // 2. 添加部门
+    function addDept() {
+        const name = document.getElementById("input-name").value;
+        const leader = document.getElementById("input-leader").value;
+        // 注意：数据库里如果 leader 是存 ID (int)，这里输入中文会报错，建议暂时先不填 leader
+
+        if(!name) { alert("部门名称必填"); return; }
+
+        const data = {
+            dept_name: name,
+            dept_manage_id: leader ? parseInt(leader) : null // 简单的转数字处理
+        };
+
+        fetch('/api/dept/add', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        }).then(res => res.json()).then(res => {
+            if(res.success) {
+                alert("添加成功");
+                $('#deptModal').modal('hide');
+                loadDepartments();
+            } else {
+                alert(res.message || "添加失败");
+            }
+        });
+    }
+
+    // 3. 删除部门
+    function deleteDept(id) {
+        if(confirm("确定删除？")) {
+            fetch(`/api/dept/delete?id=${id}`)
+                .then(res => res.json())
+                .then(res => {
+                    if(res.success) {
+                        alert("删除成功");
+                        loadDepartments();
+                    }
+                });
+        }
+    }
+</script>
+</body>
+</html>

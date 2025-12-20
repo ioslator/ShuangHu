@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>发布公告</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <style>body{padding:20px;background:#f8f9fa;}</style>
+</head>
+<body>
+<div class="container">
+    <h4 class="mb-3">发布新公告</h4>
+    <div class="card">
+        <div class="card-body">
+            <form>
+                <div class="form-group">
+                    <label>标题</label>
+                    <input type="text" class="form-control" id="inputTitle" placeholder="请输入公告标题">
+                </div>
+
+                <div class="form-group">
+                    <label>发布部门</label>
+                    <input type="text" class="form-control" id="inputDept" value="人事部">
+                </div>
+
+                <div class="form-group">
+                    <label>内容</label>
+                    <textarea class="form-control" id="inputContent" rows="5" placeholder="请输入公告详细内容"></textarea>
+                </div>
+
+                <button type="button" class="btn btn-primary" onclick="pub()">立即发布</button>
+                <a href="system_notice.html" class="btn btn-secondary">返回列表</a>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function pub() {
+        // 1. 获取所有输入框的值
+        const titleVal = document.getElementById('inputTitle').value;
+        const deptVal = document.getElementById('inputDept').value;
+        const contentVal = document.getElementById('inputContent').value;
+
+        // 简单校验
+        if (!titleVal || !contentVal) {
+            alert("标题和内容不能为空！");
+            return;
+        }
+
+        // 2. 构造 JSON 数据对象
+        // ⚠️ 关键：字段名必须和后端 Notice.java 的字段名完全一致 (下划线风格)
+        const data = {
+            notice_title: titleVal,
+            notice_content: contentVal,
+            publish_dept: deptVal
+        };
+
+        // 3. 发送 fetch 请求
+        fetch('/api/notice/add', {  // 对应 NoticeController 里的 @PostMapping("/add")
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json' // 告诉后端发的是 JSON
+            },
+            body: JSON.stringify(data) // 将对象转为 JSON 字符串
+        })
+            .then(response => response.json())
+            .then(res => {
+                if (res.success) { // 对应 Result.success()
+                    alert('发布成功！');
+                    window.location.href = 'system_notice.html'; // 跳转回列表页
+                } else {
+                    alert('发布失败：' + res.msg);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert("网络连接错误");
+            });
+    }
+</script>
+</body>
+</html>
