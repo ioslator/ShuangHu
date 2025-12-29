@@ -4,10 +4,12 @@ import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.alibaba.fastjson.support.config.FastJsonConfig;
 import com.alibaba.fastjson.support.spring.FastJsonHttpMessageConverter;
 import org.mybatis.spring.annotation.MapperScan;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -72,6 +74,28 @@ public class WebConfig implements WebMvcConfigurer {
         converters.add(0, converter);
     }
 
-    // ⚠️ 注意：如果你有 LoginInterceptor (登录拦截器)，需要在这里重写 addInterceptors 方法进行注册
-    // 目前你的代码里没写，如果需要请告诉我，我再发给你。
+    @Autowired
+    private LoginInterceptor loginInterceptor;
+
+    /**
+     * 4. 添加拦截器 - 注册登录拦截器
+     * 所有非公共路径的访问都需要先登录
+     */
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(loginInterceptor)
+                .addPathPatterns("/**")  // 拦截所有路径
+                .excludePathPatterns(   // 排除不需要拦截的路径
+                        "/DengLu/**",           // 登录注册页面
+                        "/api/login",           // 登录接口
+                        "/api/register",        // 注册接口
+                        "/static/**",           // 静态资源
+                        "/css/**",              // CSS文件
+                        "/js/**",               // JS文件
+                        "/images/**",           // 图片文件
+                        "/fonts/**",            // 字体文件
+                        "/",                    // 根路径
+                        "/favicon.ico"          // 网站图标
+                );
+    }
 }

@@ -2,8 +2,10 @@ package com.shaunghu_hrms.shuanghu.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.shaunghu_hrms.shuanghu.common.Result;
+import com.shaunghu_hrms.shuanghu.config.SessionManager;
 import com.shaunghu_hrms.shuanghu.mapper.SysUserMapper; // 引入 Mapper
 import com.shaunghu_hrms.shuanghu.model.SysUser;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,7 +22,7 @@ public class AuthController {
 
     // --- 登录接口 ---
     @PostMapping("/login")
-    public Result<SysUser> login(@RequestBody Map<String, Object> params) {
+    public Result<SysUser> login(@RequestBody Map<String, Object> params, HttpSession session) {
         // 1. 获取参数
         String username = (String) params.get("username");
         String password = (String) params.get("password");
@@ -64,6 +66,10 @@ public class AuthController {
 
         // 7. 全部通过
         user.setPassword(null); // 抹除密码，安全返回
+        
+        // 保存用户信息到session
+        SessionManager.saveUserToSession(session, user);
+        
         return Result.success("登录成功", user);
     }
 
@@ -86,5 +92,13 @@ public class AuthController {
             return Result.success("注册成功", null);
         }
         return Result.error("注册失败");
+    }
+    
+    // --- 登出接口 ---
+    @PostMapping("/logout")
+    public Result<String> logout(HttpSession session) {
+        // 清除用户会话信息
+        SessionManager.removeUserFromSession(session);
+        return Result.success("登出成功", null);
     }
 }
