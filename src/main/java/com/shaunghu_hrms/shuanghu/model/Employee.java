@@ -23,6 +23,7 @@ public class Employee {
     private Integer emp_status; // 1在职 2离职 0禁用
     private Date create_time;
     private Date update_time;
+    private String avatar;
 
     public Integer getEmp_id() { return emp_id; }
     public void setEmp_id(Integer emp_id) { this.emp_id = emp_id; }
@@ -68,4 +69,7 @@ public class Employee {
 
     public Date getUpdate_time() { return update_time; }
     public void setUpdate_time(Date update_time) { this.update_time = update_time; }
+
+    public String getAvatar() { return avatar; }
+    public void setAvatar(String avatar) { this.avatar = avatar; }
 }

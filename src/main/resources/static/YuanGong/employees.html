@@ -193,7 +193,97 @@
         </div>
     </div>
 </div>
+<div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">编辑员工信息</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <input type="hidden" id="edit_emp_id" name="emp_id">
 
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>员工姓名</label>
+                            <input type="text" class="form-control" id="edit_emp_name" required>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>工号 (不可修改)</label>
+                            <input type="text" class="form-control" id="edit_emp_no" readonly>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label>性别</label>
+                            <select class="form-control" id="edit_emp_gender">
+                                <option value="男">男</option>
+                                <option value="女">女</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-md-8">
+                            <label>身份证号</label>
+                            <input type="text" class="form-control" id="edit_emp_idcard">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>出生日期</label>
+                            <input type="date" class="form-control" id="edit_emp_birth">
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>入职日期</label>
+                            <input type="date" class="form-control" id="edit_hire_date">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>手机号码</label>
+                            <input type="text" class="form-control" id="edit_emp_phone">
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>电子邮箱</label>
+                            <input type="email" class="form-control" id="edit_emp_email">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>部门ID</label>
+                            <input type="number" class="form-control" id="edit_dept_id" placeholder="填写数字ID">
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>职位ID</label>
+                            <input type="number" class="form-control" id="edit_title_id" placeholder="填写数字ID">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>在职状态</label>
+                        <select class="form-control" id="edit_emp_status">
+                            <option value="1">在职</option>
+                            <option value="2">离职</option>
+                            <option value="0">禁用</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="submitEdit()">保存修改</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         search(); // 页面一加载就查询
@@ -204,24 +294,37 @@
         const tbody = document.getElementById('tableBody');
         const badge = document.getElementById('total-badge');
 
-        tbody.innerHTML = '<tr><td colspan="9" class="text-center">正在加载...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center"><div class="spinner-border text-primary" role="status"></div> 正在加载...</td></tr>';
 
-        // ✅ 发送请求
         fetch('/api/search?keyword=' + keyword, { method: 'POST' })
             .then(res => res.json())
             .then(res => {
-                // ✅ 必须判断 res.success 并取 res.data
-                if (res.success && res.data) {
-                    renderTable(res.data);
-                    badge.innerText = `共 ${res.data.length} 人`;
+                // 🔍【关键调试】查看控制台打印的真实结构
+                console.log("👉 后端返回的完整数据:", res);
+
+                // 兼容性判断：
+                // 1. res.success 为 true
+                // 2. 或者 res.data 不为 null (且不是空列表，虽然空列表也应该显示表头)
+                // 3. 这里的 res.data 就是 List<Map>
+                if (res && (res.success === true || res.isSuccess === true) && res.data) {
+                    // 如果数据是空数组，说明查到了但没人在列表里
+                    if (res.data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="9" class="text-center">未找到匹配的员工</td></tr>';
+                        badge.innerText = `共 0 人`;
+                    } else {
+                        renderTable(res.data);
+                        badge.innerText = `共 ${res.data.length} 人`;
+                    }
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="9" class="text-center">暂无数据</td></tr>';
+                    // 如果代码走到这里，说明 success 是 false，或者 data 是 null
+                    console.warn("❌ 判断条件未通过: success=", res.success, " data=", res.data);
+                    tbody.innerHTML = '<tr><td colspan="9" class="text-center">暂无数据 (接口返回失败)</td></tr>';
                     badge.innerText = `共 0 人`;
                 }
             })
             .catch(err => {
-                console.error(err);
-                tbody.innerHTML = '<tr><td colspan="9" class="text-center text-danger">加载失败，请检查后端日志</td></tr>';
+                console.error("❌ 请求发生错误:", err);
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center text-danger">请求出错，请检查网络或F12控制台</td></tr>';
             });
     }
 
@@ -229,37 +332,119 @@
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
 
-        if (!data || data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9" class="text-center">未找到员工</td></tr>';
-            return;
+        // 🔍【关键调试】打印第一条数据的所有字段名，检查是 emp_name 还是 empName 还是 EMP_NAME
+        if (data.length > 0) {
+            console.log("👉 第一条员工数据的字段 keys:", Object.keys(data[0]));
+            console.log("👉 第一条员工数据内容:", data[0]);
         }
 
         data.forEach(item => {
-            // ✅ 核心修正：这里必须使用数据库的字段名 (下划线风格)
-            // item.dept_name 和 item.title_name 是我们在 Mapper 里 JOIN 出来的
+            // 💡 技巧：创建一个辅助函数来获取值，兼容大小写
+            // 这样无论后端返回 emp_name, EMP_NAME 还是 empName 都能显示
+            const getVal = (key) => item[key] || item[key.toUpperCase()] || item[key.replace(/_([a-z])/g, (g) => g[1].toUpperCase())] || '';
+
             const tr = document.createElement('tr');
+            // 注意：这里我们尝试直接用 item.emp_name，如果不行，请看控制台输出的 Key 是什么
             tr.innerHTML = `
                 <td class="pl-4">
                     <div class="d-flex align-items-center">
                         <div class="avatar-circle shadow-sm">${(item.emp_name || '?').charAt(0)}</div>
                         <div>
-                            <div class="text-emphasis">${item.emp_name}</div>
+                            <div class="text-emphasis">${item.emp_name || item.EMP_NAME || '?'}</div>
                         </div>
                     </div>
                 </td>
-                <td><span class="badge badge-light border">${item.emp_no}</span></td>
+                <td><span class="badge badge-light border">${item.emp_no || ''}</span></td>
                 <td><span class="text-dark font-weight-bold">${item.dept_name || '暂无部门'}</span></td>
                 <td><span class="text-info">${item.title_name || '未定级'}</span></td>
                 <td>${item.emp_phone || '-'}</td>
                 <td>${item.emp_email || '-'}</td>
                 <td>${item.hire_date || '-'}</td>
-                <td class="text-center"><span class="badge badge-success">在职</span></td>
                 <td class="text-center">
-                    <button class="btn btn-sm btn-outline-primary" onclick="alert('编辑ID: ${item.emp_id}')">编辑</button>
+                    ${item.emp_status == 1 ? '<span class="badge badge-success">在职</span>' :
+                item.emp_status == 2 ? '<span class="badge badge-secondary">离职</span>' : '<span class="badge badge-danger">禁用</span>'}
+                </td>
+                <td class="text-center">
+                    <button class="btn btn-sm btn-outline-primary" onclick="openEditModal(${item.emp_id})">编辑</button>
                 </td>
             `;
             tbody.appendChild(tr);
         });
+    }
+
+    function openEditModal(empId) {
+        fetch('/api/employee/get/' + empId)
+            .then(res => res.json())
+            .then(res => {
+                if (res.success && res.data) {
+                    const emp = res.data;
+
+                    // 1. 基础字段
+                    document.getElementById('edit_emp_id').value = emp.emp_id;
+                    document.getElementById('edit_emp_name').value = emp.emp_name;
+                    document.getElementById('edit_emp_no').value = emp.emp_no;
+                    document.getElementById('edit_emp_phone').value = emp.emp_phone || '';
+                    document.getElementById('edit_emp_email').value = emp.emp_email || '';
+                    document.getElementById('edit_dept_id').value = emp.dept_id || '';
+                    document.getElementById('edit_title_id').value = emp.title_id || '';
+                    document.getElementById('edit_emp_status').value = emp.emp_status;
+
+                    // 2. ✅ 新增字段回显
+                    document.getElementById('edit_emp_gender').value = emp.emp_gender || '男';
+                    document.getElementById('edit_emp_idcard').value = emp.emp_idcard || '';
+
+                    // 3. ✅ 日期格式处理 (截取 yyyy-MM-dd)
+                    if (emp.emp_birth) {
+                        document.getElementById('edit_emp_birth').value = emp.emp_birth.split(' ')[0];
+                    } else {
+                        document.getElementById('edit_emp_birth').value = '';
+                    }
+
+                    if (emp.hire_date) {
+                        document.getElementById('edit_hire_date').value = emp.hire_date.split(' ')[0];
+                    } else {
+                        document.getElementById('edit_hire_date').value = '';
+                    }
+
+                    $('#editModal').modal('show');
+                } else {
+                    alert('无法获取员工信息：' + res.msg);
+                }
+            });
+    }
+
+    function submitEdit() {
+        const updateData = {
+            emp_id: document.getElementById('edit_emp_id').value,
+            emp_name: document.getElementById('edit_emp_name').value,
+            // ✅ 新增字段提交
+            emp_gender: document.getElementById('edit_emp_gender').value,
+            emp_idcard: document.getElementById('edit_emp_idcard').value,
+            emp_birth: document.getElementById('edit_emp_birth').value,
+            hire_date: document.getElementById('edit_hire_date').value,
+
+            emp_phone: document.getElementById('edit_emp_phone').value,
+            emp_email: document.getElementById('edit_emp_email').value,
+            dept_id: document.getElementById('edit_dept_id').value,
+            title_id: document.getElementById('edit_title_id').value,
+            emp_status: document.getElementById('edit_emp_status').value
+        };
+
+        fetch('/api/employee/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updateData)
+        })
+            .then(res => res.json())
+            .then(res => {
+                if (res.success) {
+                    alert('修改成功！');
+                    $('#editModal').modal('hide');
+                    search();
+                } else {
+                    alert('修改失败：' + (res.msg || '未知错误'));
+                }
+            });
     }
 </script>
 </body>

@@ -2,165 +2,205 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>双虎人力资源管理系统</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+
     <style>
-        body {
-            background-color: #f8f9fa;
-            overflow: hidden; /* 防止双滚动条 */
+        :root {
+            --sidebar-bg: #222e3c;
+            --sidebar-hover: #2b3947;
+            --primary-gradient: linear-gradient(45deg, #4e73df, #224abe);
+            --success-gradient: linear-gradient(45deg, #1cc88a, #13855c);
+            --info-gradient: linear-gradient(45deg, #36b9cc, #258391);
+            --warning-gradient: linear-gradient(45deg, #f6c23e, #dda20a);
+            --danger-gradient: linear-gradient(45deg, #e74a3b, #be2617);
         }
-        /* 侧边栏样式优化 */
+
+        body {
+            background-color: #f3f4f6;
+            font-family: 'Nunito', sans-serif;
+            overflow: hidden;
+        }
+
+        /* === 侧边栏布局 (已修复重叠与对齐) === */
         .sidebar {
             height: 100vh;
-            background-color: #343a40;
-            color: white;
+            background-color: var(--sidebar-bg);
+            color: #adb5bd;
             position: fixed;
             top: 0;
             left: 0;
-            width: 250px;
-            padding-top: 0;
+            width: 240px;
+            z-index: 1000;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
-            transition: all 0.3s;
-            z-index: 100;
         }
 
         .sidebar-header {
-            padding: 20px;
-            background-color: #2c3136;
-            text-align: center;
-            border-bottom: 1px solid #4b545c;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(0,0,0,0.1);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            flex-shrink: 0;
         }
 
         .sidebar-menu {
             flex: 1;
             overflow-y: auto;
+            overflow-x: hidden;
             padding: 10px 0;
         }
+        .sidebar-menu::-webkit-scrollbar { width: 5px; }
+        .sidebar-menu::-webkit-scrollbar-thumb { background: #4e5d6c; border-radius: 3px; }
+        .sidebar-menu::-webkit-scrollbar-track { background: transparent; }
 
-        /* 菜单项样式 */
-        .nav-item {
-            list-style: none;
-            width: 100%;
-        }
-
-        .nav-link {
-            color: #c2c7d0;
-            padding: 12px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            text-decoration: none !important;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .nav-link:hover {
-            color: #fff;
-            background-color: rgba(255,255,255,0.1);
-        }
-
-        .nav-link.active {
-            color: #fff;
-            background-color: #007bff;
-            border-radius: 4px;
-            margin: 0 10px;
-            width: auto;
-        }
-
-        .nav-icon {
-            margin-right: 10px;
-            width: 20px;
-            text-align: center;
-        }
-
-        /* 子菜单样式 */
-        .submenu {
-            background-color: #2c3136;
-            display: none; /* 默认折叠 */
-            padding-left: 0;
-            list-style: none;
-        }
-
-        .submenu .nav-link {
-            padding-left: 50px;
-            font-size: 0.9em;
-        }
-
-        .menu-arrow {
-            transition: transform 0.3s;
-            font-size: 0.8em;
-        }
-
-        .menu-open .menu-arrow {
-            transform: rotate(90deg);
-        }
-
-        /* 底部用户信息栏 */
         .user-panel {
-            border-top: 1px solid #4b545c;
-            padding: 15px;
-            background-color: #2c3136;
+            flex-shrink: 0;
+            padding: 15px 20px;
+            background-color: rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* === 菜单项样式 === */
+        .nav-link {
+            color: #adb5bd;
+            padding: 12px 20px;
+            font-size: 0.95rem;
+            border-left: 3px solid transparent;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .nav-link:hover {
+            color: white;
+            background-color: var(--sidebar-hover);
+            text-decoration: none;
+        }
+        .nav-link.active {
+            color: white;
+            background-color: var(--sidebar-hover);
+            border-left-color: #4e73df;
+        }
+
+        .nav-item-content {
             display: flex;
             align-items: center;
         }
-
-        .user-avatar {
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            background-color: #007bff;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .nav-icon {
+            width: 24px;
+            text-align: center;
             margin-right: 10px;
         }
-
-        .user-info {
-            flex: 1;
-            overflow: hidden;
+        .menu-arrow {
+            font-size: 0.8em;
+            transition: transform 0.3s;
+            color: #6c757d;
         }
 
-        .user-name {
-            font-weight: bold;
-            font-size: 14px;
-            white-space: nowrap;
+        .submenu {
+            background-color: #1a232e;
+            display: none;
+            list-style: none;
+            padding: 0;
+        }
+        .submenu .nav-link {
+            padding-left: 54px;
+            font-size: 0.9rem;
+            height: 40px;
         }
 
-        .user-role {
-            font-size: 12px;
-            color: #aaa;
-        }
-
-        .btn-logout {
-            color: #dc3545;
-            cursor: pointer;
-            padding: 5px;
-        }
-        .btn-logout:hover {
-            color: #ff6b6b;
-        }
-
-        /* 主内容区域 */
+        /* === 主内容区 === */
         .main-content {
-            margin-left: 250px;
-            padding: 20px;
+            margin-left: 240px;
             height: 100vh;
             overflow-y: auto;
+            padding: 25px;
             transition: all 0.3s;
         }
 
-        /* Iframe */
-        #content-frame {
-            width: 100%;
-            height: calc(100vh - 40px);
+        /* 卡片样式 */
+        .stat-card {
             border: none;
-            display: none;
+            border-radius: 12px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 20px 0 rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+        }
+        .stat-card:hover { transform: translateY(-5px); }
+
+        .bg-gradient-primary { background: var(--primary-gradient); }
+        .bg-gradient-success { background: var(--success-gradient); }
+        .bg-gradient-info { background: var(--info-gradient); }
+        .bg-gradient-warning { background: var(--warning-gradient); }
+        .bg-gradient-danger { background: var(--danger-gradient); }
+
+        .card-body-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 3rem;
+            opacity: 0.15;
+            color: white;
+        }
+        .stat-value { font-size: 1.8rem; font-weight: 700; }
+        .stat-label { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9; }
+
+        .content-card {
             background: white;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.03);
+            margin-bottom: 25px;
+            height: 100%;
+        }
+        .content-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f2f5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .content-title { font-weight: 700; color: #333; margin: 0; font-size: 1rem; }
+
+        .notice-list { list-style: none; padding: 0; margin: 0; }
+        .notice-item {
+            padding: 12px 20px;
+            border-bottom: 1px solid #f8f9fa;
+            display: flex;
+            align-items: center;
+        }
+        .notice-badge {
+            font-size: 0.7rem; padding: 2px 6px; border-radius: 4px;
+            background: #e74a3b; color: white; margin-right: 8px;
+        }
+
+        .user-avatar {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: #4e73df; color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; margin-right: 12px;
+        }
+        .user-info { flex: 1; overflow: hidden; }
+        .user-name { color: white; font-weight: 600; font-size: 0.9rem; }
+        .user-role { font-size: 0.75rem; color: #6c757d; }
+        .btn-logout { color: #e74a3b; cursor: pointer; }
+
+        #content-frame {
+            width: 100%; height: calc(100vh - 50px);
+            border: none; display: none; background: white;
+            border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.05);
         }
     </style>
 </head>
@@ -168,106 +208,88 @@
 
 <nav class="sidebar" id="sidebar">
     <div class="sidebar-header">
-        <h4>双虎人事管理系统</h4>
+        <h4><i class="fas fa-paw mr-2"></i>双虎 HRMS</h4>
     </div>
 
     <div class="sidebar-menu" id="menu-container">
     </div>
 
     <div class="user-panel">
-        <div class="user-avatar" id="userAvatarIcon">
-            <i class="fas fa-user"></i>
-        </div>
+        <div class="user-avatar" id="userAvatarIcon">U</div>
         <div class="user-info">
-            <div class="user-name" id="displayUsername">未登录</div>
-            <div class="user-role" id="displayRole">访客</div>
+            <div class="user-name" id="displayUsername">Loading...</div>
+            <div class="user-role" id="displayRole">...</div>
         </div>
-        <div class="btn-logout" title="退出登录" onclick="logout()">
-            <i class="fas fa-sign-out-alt"></i>
+        <div class="btn-logout" onclick="logout()" title="退出系统">
+            <i class="fas fa-sign-out-alt fa-lg"></i>
         </div>
     </div>
 </nav>
 
 <main class="main-content">
-    <div id="dashboard-module">
-        <h2 class="border-bottom pb-2 mb-3">主页</h2>
+    <div id="dashboard-module" class="fade-in">
+        <h4 class="mb-4 text-dark font-weight-bold">工作台 Dashboard</h4>
 
         <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card bg-primary text-white h-100">
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="stat-card bg-gradient-primary h-100">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title">员工总数</h6>
-                                <h3 class="mb-0" id="total-employees">-</h3>
-                            </div>
-                            <i class="fas fa-users fa-2x opacity-50"></i>
-                        </div>
+                        <div class="stat-label">员工总数</div>
+                        <div class="stat-value" id="total-employees">-</div>
+                        <div class="card-body-icon"><i class="fas fa-users"></i></div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card bg-success text-white h-100">
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="stat-card bg-gradient-info h-100">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title">今日出勤</h6>
-                                <h3 class="mb-0" id="today-attendance">-</h3>
-                            </div>
-                            <i class="fas fa-check-circle fa-2x opacity-50"></i>
-                        </div>
+                        <div class="stat-label">部门数量</div>
+                        <div class="stat-value" id="total-departments">-</div>
+                        <div class="card-body-icon"><i class="fas fa-building"></i></div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card bg-info text-white h-100">
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="stat-card bg-gradient-danger h-100">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title">部门数量</h6>
-                                <h3 class="mb-0" id="total-departments">-</h3>
-                            </div>
-                            <i class="fas fa-building fa-2x opacity-50"></i>
-                        </div>
+                        <div class="stat-label">待处理审批</div>
+                        <div class="stat-value" id="pending-tasks">3</div>
+                        <div class="card-body-icon"><i class="fas fa-clipboard-check"></i></div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card bg-warning text-white h-100">
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="stat-card bg-gradient-warning h-100">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title">待处理事项</h6>
-                                <h3 class="mb-0">3</h3> </div>
-                            <i class="fas fa-bell fa-2x opacity-50"></i>
-                        </div>
+                        <div class="stat-label">发布公告</div>
+                        <div class="stat-value" id="total-notices">-</div>
+                        <div class="card-body-icon"><i class="fas fa-bullhorn"></i></div>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="row">
-            <div class="col-md-6">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-white">
-                        <h5 class="mb-0"><i class="fas fa-bullhorn text-primary mr-2"></i>近期公告</h5>
+            <div class="col-lg-7 mb-4">
+                <div class="content-card">
+                    <div class="content-header">
+                        <h6 class="content-title"><i class="fas fa-chart-bar mr-2 text-primary"></i>各部门人员分布</h6>
                     </div>
                     <div class="card-body">
-                        <ul class="list-group list-group-flush" id="dashboard-notice-list">
-                            <li class="list-group-item text-center text-muted">正在加载公告...</li>
-                        </ul>
+                        <div id="deptChart" style="width: 100%; height: 320px;"></div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-6">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-white">
-                        <h5 class="mb-0"><i class="fas fa-chart-pie text-success mr-2"></i>部门分布</h5>
+            <div class="col-lg-5 mb-4">
+                <div class="content-card">
+                    <div class="content-header">
+                        <h6 class="content-title"><i class="fas fa-bell mr-2 text-warning"></i>最新系统公告</h6>
+                        <a href="#" onclick="loadPage('GongGao/system_notice.html', null)" class="small text-primary">查看全部</a>
                     </div>
-                    <div class="card-body">
-                        <ul class="list-group list-group-flush" id="department-distribution">
-                            <li class="text-center text-muted">加载中...</li>
+                    <div class="card-body p-0">
+                        <ul class="notice-list" id="dashboard-notice-list">
+                            <li class="p-4 text-center text-muted">正在加载数据...</li>
                         </ul>
                     </div>
                 </div>
@@ -279,9 +301,6 @@
 </main>
 
 <script>
-    // ================= 配置区域 =================
-
-    // 1. 获取 Cookie 工具函数
     function getCookie(name) {
         const value = `; ${document.cookie}`;
         const parts = value.split(`; ${name}=`);
@@ -289,26 +308,15 @@
         return null;
     }
 
-    // 2. 获取当前用户角色 (默认为访客)
-    // 对应 login.html 中保存的 key: 'role', 'username'
     const currentUser = {
         username: getCookie('username') || '游客',
         role: getCookie('role') || 'visitor'
     };
 
-    // 3. 菜单配置 (这是核心！根据您的需求文档定义)
-    // roles 数组为空表示所有人可见
     const menuConfig = [
+        { title: '工作台', icon: 'fa-tachometer-alt', link: '#', roles: [] },
         {
-            title: '主页',
-            icon: 'fa-tachometer-alt',
-            link: '#', // # 表示显示主页 div
-            roles: [] // 所有人可见
-        },
-        {
-            title: '员工管理',
-            icon: 'fa-users',
-            roles: ['admin', 'manager'],
+            title: '员工管理', icon: 'fa-user-tie', roles: ['admin', 'manager'],
             children: [
                 { title: '员工信息列表', link: 'YuanGong/employees.html' },
                 { title: '添加员工', link: 'YuanGong/employee_add.html' },
@@ -316,155 +324,90 @@
             ]
         },
         {
-            title: '部门与组织',
-            icon: 'fa-sitemap',
-            roles: [], // 所有人可见（或者限制 admin）
+            title: '部门与组织', icon: 'fa-sitemap', roles: [],
             children: [
                 { title: '部门管理', link: 'BuMen/department_manage.html' },
-                { title: '工种管理', link: 'BuMen/job_manage.html' }, // 预留
-                { title: '职称管理', link: 'BuMen/title_manage.html' }, // 预留
+                { title: '工种管理', link: 'BuMen/job_manage.html' },
+                { title: '职称管理', link: 'BuMen/title_manage.html' },
             ]
         },
         {
-            title: '请假管理',
-            icon: 'fa-clock',
-            roles: [],
+            title: '考勤与请假', icon: 'fa-calendar-check', roles: [],
             children: [
                 { title: '请假申请', link: 'QingJia/askfor_leave.html' },
-                { title: '请假审批', link: 'QingJia/askleave_approval.html' } // 预留
+                { title: '请假审批', link: 'QingJia/askleave_approval.html' }
             ]
         },
         {
-            title: '人事记录',
-            icon: 'fa-folder-open',
-            roles: ['admin'], // 仅管理员
+            title: '人事档案', icon: 'fa-folder', roles: ['admin'],
             children: [
-                { title: '处分记录', link: 'RenShi/punishment.html' }, // 预留
-                { title: '退休/离职', link: 'RenShi/retirement.html' } // 预留
+                { title: '处分记录', link: 'RenShi/punishment.html' },
+                { title: '退休/离职', link: 'RenShi/retirement.html' }
             ]
         },
         {
-            title: '个人中心',
-            icon: 'fa-user-circle',
-            roles: [],
+            title: '个人中心', icon: 'fa-id-card', roles: [],
             children: [
                 { title: '我的信息', link: 'ZiwoXinxi/self_information.html' },
                 { title: '修改密码', link: 'ZiwoXinxi/change_pwd.html' }
             ]
         },
         {
-            title: '系统公告',
-            icon: 'fa-bullhorn',
-            roles: [],
+            title: '公告通知', icon: 'fa-bullhorn', roles: [],
             children: [
                 { title: '公告列表', link: 'GongGao/system_notice.html' },
                 { title: '发布公告', link: 'GongGao/notice_publish.html', roles: ['admin', 'manager'] }
             ]
         },
         {
-            title: '系统设置',
-            icon: 'fa-cogs',
-            roles: ['admin'], // 仅管理员
+            title: '系统设置', icon: 'fa-cogs', roles: ['admin'],
             children: [
                 { title: '用户权限管理', link: 'XitongShezhi/right_manage.html' },
             ]
         }
     ];
 
-    // ================= 逻辑区域 =================
-
-    function loadSystemNotice() {
-        // 这里的 ID "notice-content" 是你主页显示公告文字的 <div> 或 <span> 的 ID
-        // 如果你的 HTML 里 ID 不叫这个，请修改这里
-        const noticeContainer = document.getElementById('notice-content');
-        if(!noticeContainer) return;
-
-        fetch('/api/notice/list')
-            .then(res => res.json())
-            .then(res => {
-                if (res.success && res.data && res.data.length > 0) {
-                    // 取最新的一条公告 (List 第一个)
-                    const latest = res.data[0];
-                    // ⚠️ 关键修正：使用 notice_title 和 notice_content
-                    // 这种写法是一个跑马灯或者简单的文本展示
-                    noticeContainer.innerHTML = `
-                        <span style="color:red; font-weight:bold;">[最新]</span>
-                        ${latest.notice_title} - ${latest.create_time ? latest.create_time.split(' ')[0] : ''}
-                    `;
-                } else {
-                    noticeContainer.innerText = "暂无系统公告";
-                }
-            })
-            .catch(err => {
-                console.error("公告加载失败", err);
-                if(noticeContainer) noticeContainer.innerText = "公告加载失败";
-            });
-    }
     document.addEventListener('DOMContentLoaded', function() {
         initUserPanel();
         renderSidebar();
-        initDashboardData();
+        initDashboard();
     });
 
-    // 初始化用户信息
     function initUserPanel() {
         document.getElementById('displayUsername').textContent = currentUser.username;
-
-        // 角色中文映射
-        const roleMap = {
-            'admin': '超级管理员',
-            'manager': '管理人员',
-            'employee': '普通员工',
-            'visitor': '访客'
-        };
-        document.getElementById('displayRole').textContent = roleMap[currentUser.role] || currentUser.role;
+        document.getElementById('userAvatarIcon').textContent = currentUser.username.charAt(0).toUpperCase();
+        const roleMap = { 'admin': '超级管理员', 'manager': '部门经理', 'employee': '普通员工', 'visitor': '访客' };
+        document.getElementById('displayRole').textContent = roleMap[currentUser.role] || '未知角色';
     }
 
-    // 渲染侧边栏
     function renderSidebar() {
         const container = document.getElementById('menu-container');
-        container.innerHTML = ''; // 清空
+        container.innerHTML = '';
 
         menuConfig.forEach((item, index) => {
-            // 1. 权限检查
-            if (item.roles && item.roles.length > 0 && !item.roles.includes(currentUser.role)) {
-                return; // 角色不匹配，跳过
-            }
+            if (item.roles && item.roles.length > 0 && !item.roles.includes(currentUser.role)) return;
 
-            // 2. 创建菜单项
             const hasChildren = item.children && item.children.length > 0;
-            const li = document.createElement('div'); // 使用 div 方便布局
+            const li = document.createElement('div');
             li.className = 'nav-item';
 
-            // 生成主链接 HTML
             let html = `
-                    <a class="nav-link ${index === 0 ? 'active' : ''}"
-                       href="${hasChildren ? 'javascript:;' : item.link}"
-                       ${hasChildren ? `onclick="toggleSubmenu('submenu-${index}', this)"` : `onclick="loadPage('${item.link}', this)"`}
-                    >
-                        <div>
-                            <i class="fas ${item.icon} nav-icon"></i>
-                            ${item.title}
-                        </div>
-                        ${hasChildren ? '<i class="fas fa-chevron-right menu-arrow"></i>' : ''}
-                    </a>
-                `;
+                <a class="nav-link ${index === 0 ? 'active' : ''}"
+                   href="${hasChildren ? 'javascript:;' : item.link}"
+                   onclick="${hasChildren ? `toggleSubmenu('submenu-${index}', this)` : `loadPage('${item.link}', this)`}">
+                    <div class="nav-item-content">
+                        <i class="fas ${item.icon} nav-icon"></i>
+                        ${item.title}
+                    </div>
+                    ${hasChildren ? '<i class="fas fa-chevron-right menu-arrow"></i>' : ''}
+                </a>
+            `;
 
-            // 生成子菜单 HTML
             if (hasChildren) {
                 html += `<ul id="submenu-${index}" class="submenu">`;
                 item.children.forEach(sub => {
-                    // 子菜单权限检查
-                    if (sub.roles && sub.roles.length > 0 && !sub.roles.includes(currentUser.role)) {
-                        return;
-                    }
-                    html += `
-                            <li>
-                                <a class="nav-link" href="#" onclick="loadPage('${sub.link}', this)">
-                                    ${sub.title}
-                                </a>
-                            </li>
-                        `;
+                    if (sub.roles && sub.roles.length > 0 && !sub.roles.includes(currentUser.role)) return;
+                    html += `<li><a class="nav-link" href="#" onclick="loadPage('${sub.link}', this)">${sub.title}</a></li>`;
                 });
                 html += `</ul>`;
             }
@@ -474,132 +417,130 @@
         });
     }
 
-    // 切换子菜单折叠/展开
-    window.toggleSubmenu = function(id, element) {
+    window.toggleSubmenu = function(id, el) {
         const submenu = document.getElementById(id);
-        const parent = element.parentElement; // div.nav-item
+        const arrow = el.querySelector('.menu-arrow');
+        const isOpen = submenu.style.display === 'block';
 
-        // 切换样式
-        if (submenu.style.display === 'block') {
-            submenu.style.display = 'none';
-            parent.classList.remove('menu-open');
-            element.querySelector('.menu-arrow').style.transform = 'rotate(0deg)';
-        } else {
-            // 关闭其他打开的菜单（手风琴效果，可选）
-            document.querySelectorAll('.submenu').forEach(ul => {
-                ul.style.display = 'none';
+        document.querySelectorAll('.submenu').forEach(ul => {
+            ul.style.display = 'none';
+            if(ul.previousElementSibling.querySelector('.menu-arrow'))
                 ul.previousElementSibling.querySelector('.menu-arrow').style.transform = 'rotate(0deg)';
-            });
+        });
 
+        if (!isOpen) {
             submenu.style.display = 'block';
-            parent.classList.add('menu-open');
-            element.querySelector('.menu-arrow').style.transform = 'rotate(90deg)';
+            arrow.style.transform = 'rotate(90deg)';
         }
     };
 
-    // 加载页面逻辑
-    window.loadPage = function(url, element) {
-        // 1. 样式高亮处理
-        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-        element.classList.add('active');
+    window.loadPage = function(url, el) {
+        if(el) {
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            el.classList.add('active');
+        }
 
-        // 如果是子菜单，保持父菜单高亮或展开状态（可选优化）
-
-        const dashboardModule = document.getElementById('dashboard-module');
-        const contentFrame = document.getElementById('content-frame');
+        const dashboard = document.getElementById('dashboard-module');
+        const frame = document.getElementById('content-frame');
 
         if (url === '#' || url === '') {
-            // 显示仪表盘
-            dashboardModule.style.display = 'block';
-            contentFrame.style.display = 'none';
+            dashboard.style.display = 'block';
+            frame.style.display = 'none';
+            initDashboard();
         } else {
-            // 显示 Iframe
-            dashboardModule.style.display = 'none';
-            contentFrame.style.display = 'block';
-            // 避免重复加载
-            if (contentFrame.getAttribute('src') !== url) {
-                contentFrame.src = url;
-            }
+            dashboard.style.display = 'none';
+            frame.style.display = 'block';
+            if (frame.getAttribute('src') !== url) frame.src = url;
         }
     };
 
-    // 退出登录
     window.logout = function() {
         if(confirm('确定要退出登录吗？')) {
-            // 清除 cookie
-            document.cookie = "username=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
-            document.cookie = "password=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
-            document.cookie = "role=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
-            window.location.href = "login.html";
+            // 清除 Cookie
+            document.cookie.split(";").forEach(function(c) {
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+            });
+            // 修正跳转路径，指向 DengLu 文件夹下的 login.html
+            window.location.href = "/DengLu/login.html";
         }
     };
 
-    // 初始化仪表盘数据
-    // 初始化仪表盘数据
-    function initDashboardData() {
-        // 1. 统计数据 (如果不确定 ApiController 的路径，先保留原样或暂时注释)
-        fetch('/api/dashboard').then(res => res.json()).then(res => {
-            // 注意：Result 对象解包
-            if(res.success && res.data) {
-                document.getElementById('total-employees').textContent = res.data.totalEmployees || 0;
-                document.getElementById('today-attendance').textContent = res.data.todayAttendance || 0;
-                document.getElementById('total-departments').textContent = res.data.totalDepartments || 0;
-            }
-        }).catch(e => console.log('Dashboard API not ready'));
+    function initDashboard() {
+        fetch('/api/dashboard/stats')
+            .then(res => res.json())
+            .then(res => {
+                if (!res.success) return;
+                const data = res.data;
 
-        // 2. 部门分布
-        // ✅ 修正路径: /api/departments -> /api/dept/list
-        fetch('/api/dept/list').then(res => res.json()).then(res => {
-            // ✅ 修正解包: res -> res.data
-            if (res.success && res.data) {
-                const list = document.getElementById('department-distribution');
-                list.innerHTML = '';
-                res.data.forEach(dept => {
-                    // 注意：后端 Dept 对象里要有 employeeCount 字段，或者这里只显示名字
-                    // 如果 dept.employeeCount 是 undefined，暂时显示 0
-                    const count = dept.employeeCount || 0;
-                    list.innerHTML += `
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            ${dept.dept_name} <span class="badge badge-primary badge-pill">${count}</span>
-                        </li>`;
-                });
-            }
-        }).catch(e => console.log('Dept API error', e));
+                animateValue("total-employees", 0, data.totalEmployees, 1000);
+                animateValue("total-departments", 0, data.totalDepts, 1000);
+                animateValue("total-notices", 0, data.totalNotices, 1000);
 
-        // 3. 加载近期公告
-        // ✅ 修正路径: /api/notices -> /api/notice/list
-        fetch('/api/notice/list').then(res => res.json()).then(res => {
-            const list = document.getElementById('dashboard-notice-list');
-            list.innerHTML = '';
+                renderDeptChart(data.deptStats);
+                renderNoticeList(data.recentNotices);
+            })
+            .catch(err => console.error(err));
+    }
 
-            // ✅ 修正判断: 检查 res.success 和 res.data
-            if (!res.success || !res.data || res.data.length === 0) {
-                list.innerHTML = '<li class="list-group-item text-center text-muted">暂无公告</li>';
-                return;
-            }
+    function animateValue(id, start, end, duration) {
+        const obj = document.getElementById(id);
+        if(!obj) return;
+        let startTimestamp = null;
+        const step = (timestamp) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+            obj.innerHTML = Math.floor(progress * (end - start) + start);
+            if (progress < 1) window.requestAnimationFrame(step);
+        };
+        window.requestAnimationFrame(step);
+    }
 
-            // ✅ 修正解包: 使用 res.data.slice
-            const recentNotices = res.data.slice(0, 5);
+    // === 修复的核心代码 ===
+    function renderDeptChart(deptData) {
+        if(!deptData || deptData.length === 0) return;
+        const chartDom = document.getElementById('deptChart');
+        const myChart = echarts.init(chartDom);
+        const option = {
+            tooltip: { trigger: 'item' },
+            legend: {
+                bottom: '0%', // 修复：将图例移到底部
+                left: 'center',
+                itemWidth: 10,
+                itemHeight: 10
+            },
+            color: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796'],
+            series: [{
+                name: '部门人数',
+                type: 'pie',
+                radius: ['40%', '65%'], // 修复：微调半径，防止过大
+                center: ['50%', '45%'], // 修复：将饼图中心上移，避开底部图例
+                itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 },
+                label: { show: false },
+                data: deptData.map(item => ({ name: item.dept_name, value: item.count }))
+            }]
+        };
+        myChart.setOption(option);
+        window.addEventListener('resize', () => myChart.resize());
+    }
 
-            recentNotices.forEach(item => {
-                // 处理日期格式，防止报错
-                let dateStr = item.create_time || '';
-                if(dateStr.includes(' ')) dateStr = dateStr.split(' ')[0];
-
-                list.innerHTML += `
-                    <li class="list-group-item">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="text-truncate" style="max-width: 70%;" title="${item.notice_title}">
-                                ${item.status === 1 ? '<span class="badge badge-danger mr-1">NEW</span>' : ''}
-                                ${item.notice_title} </span>
-                            <span class="text-muted small">${dateStr}</span>
-                        </div>
-                    </li>`;
-            });
-        }).catch(e => {
-            console.error(e);
-            document.getElementById('dashboard-notice-list').innerHTML =
-                '<li class="list-group-item text-center text-danger">加载失败</li>';
+    function renderNoticeList(notices) {
+        const list = document.getElementById('dashboard-notice-list');
+        list.innerHTML = '';
+        if (!notices || notices.length === 0) {
+            list.innerHTML = '<li class="p-4 text-center text-muted">暂无公告</li>';
+            return;
+        }
+        notices.forEach(notice => {
+            let dateStr = notice.create_time ? notice.create_time.split('T')[0] : '刚刚';
+            list.innerHTML += `
+                <li class="notice-item">
+                    <div class="flex-grow-1 text-truncate">
+                        ${notice.status === 1 ? '<span class="notice-badge">NEW</span>' : ''}
+                        <span class="text-dark font-weight-bold" style="font-size:0.9rem;">${notice.notice_title}</span>
+                    </div>
+                    <div class="text-muted small ml-2">${dateStr}</div>
+                </li>
+            `;
         });
     }
 </script>

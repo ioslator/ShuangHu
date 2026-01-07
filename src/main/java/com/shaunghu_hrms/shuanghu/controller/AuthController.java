@@ -1,11 +1,13 @@
 package com.shaunghu_hrms.shuanghu.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.shaunghu_hrms.shuanghu.common.Result;
-import com.shaunghu_hrms.shuanghu.mapper.SysUserMapper; // 引入 Mapper
 import com.shaunghu_hrms.shuanghu.model.SysUser;
+import com.shaunghu_hrms.shuanghu.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import jakarta.servlet.http.HttpServletRequest; // 1. 导入 HttpServletRequest
+import jakarta.servlet.http.HttpSession;
 
 import java.util.Map;
 
@@ -14,77 +16,53 @@ import java.util.Map;
 @CrossOrigin
 public class AuthController {
 
-    // ⚠️ 改动点：直接注入 Mapper，不走 Service，防止你的 Service 没有对应方法
     @Autowired
-    private SysUserMapper sysUserMapper;
+    private UserService userService; // 2. 改用 UserService (包含加密逻辑)
 
-    // --- 登录接口 ---
     @PostMapping("/login")
-    public Result<SysUser> login(@RequestBody Map<String, Object> params) {
-        // 1. 获取参数
+    // 3. 增加 HttpServletRequest 参数，用于操作 Session
+    public Result<SysUser> login(@RequestBody Map<String, Object> params, HttpSession session, HttpServletRequest request) {
         String username = (String) params.get("username");
         String password = (String) params.get("password");
 
-        // 2. 转换角色 (防止前端传空或其他类型)
-        Integer role = null;
-        try {
-            Object roleObj = params.get("role");
-            if (roleObj != null) {
-                role = Integer.parseInt(roleObj.toString());
-            }
-        } catch (Exception e) {
-            // 忽略错误，role 保持为 null
+        if (username == null || password == null) {
+            return Result.error("用户名或密码不能为空");
         }
 
-        if (role == null) {
-            return Result.error("请选择登录身份");
+        // 4. 调用 Service 进行登录 (自动处理 MD5 比对)
+        SysUser user = userService.login(username, password);
+
+        if (user != null) {
+            // ================= 安全加固重点 =================
+            // 防止会话固定攻击 (Session Fixation)
+            // 登录成功后，销毁旧 Session，创建新 Session
+            session.invalidate();
+            HttpSession newSession = request.getSession();
+            // ==============================================
+
+            newSession.setAttribute("currentUser", user);
+
+            // 注意：因为 SysUser 中加了 @JSONField(serialize = false)，
+            // 这里的 user 对象返回给前端时，password 字段会自动消失，非常安全。
+            return Result.success("登录成功", user);
         }
 
-        // 3. 第一步：只根据“用户名”去查人
-        QueryWrapper<SysUser> query = new QueryWrapper<>();
-        query.eq("username", username);
-
-        // 使用 Mapper 直接查询，这步绝对不会报错
-        SysUser user = sysUserMapper.selectOne(query);
-
-        // 4. 第二步：判断账号是否存在
-        if (user == null) {
-            return Result.error("账号不存在"); // 弹窗提示1
-        }
-
-        // 5. 第三步：判断密码是否正确
-        if (!user.getPassword().equals(password)) {
-            return Result.error("密码错误"); // 弹窗提示2
-        }
-
-        // 6. 第四步：判断角色是否匹配 (数据库里的 1,2,3 和 前端选的 role 比对)
-        if (!user.getUser_role().equals(role)) {
-            return Result.error("您的身份角色不匹配"); // 弹窗提示3
-        }
-
-        // 7. 全部通过
-        user.setPassword(null); // 抹除密码，安全返回
-        return Result.success("登录成功", user);
+        return Result.error("登录失败，用户名或密码错误");
     }
 
-    // --- 注册接口 ---
     @PostMapping("/register")
     public Result<String> register(@RequestBody SysUser user) {
-        // 检查用户名是否重复
-        QueryWrapper<SysUser> query = new QueryWrapper<>();
-        query.eq("username", user.getUsername());
-        if (sysUserMapper.selectCount(query) > 0) {
-            return Result.error("该用户名已被注册");
-        }
-
-        // 默认值设置
-        if(user.getUser_role() == null) user.setUser_role(3); // 默认普通员工
-        if(user.getUser_status() == null) user.setUser_status(1); // 默认启用
-
-        int rows = sysUserMapper.insert(user); // 使用 Mapper 插入
-        if (rows > 0) {
+        // 简单的注册接口透传，具体逻辑都在 Service 里（包含加密）
+        if (userService.register(user)) {
             return Result.success("注册成功", null);
         }
-        return Result.error("注册失败");
+        return Result.error("注册失败，用户名可能已存在");
+    }
+
+    @GetMapping("/logout")
+    public Result<String> logout(HttpSession session) {
+        session.removeAttribute("currentUser");
+        session.invalidate(); // 退出时彻底销毁 Session
+        return Result.success("退出成功", null);
     }
 }

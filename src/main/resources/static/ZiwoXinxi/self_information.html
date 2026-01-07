@@ -6,82 +6,230 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
-        body { background-color: #f8f9fa; padding: 20px; }
-        .profile-header { background: white; padding: 30px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); text-align: center; }
-        .profile-img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 4px solid #f8f9fa; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 15px; background-color: #eee; }
-        .loading-mask { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:999; display:flex; justify-content:center; align-items:center; }
+        body {
+            background-color: #f0f2f5;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        /* 1. 调整容器宽度：设置为 90% 或固定较大宽度，让界面更大气 */
+        .container-custom {
+            max-width: 1600px; /* 调大这里可以让整体更宽 */
+            width: 95%;
+            margin: 0 auto;
+        }
+
+        .card {
+            border: none;
+            border-radius: 15px; /* 圆角加大 */
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.06);
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        /* --- 左侧个人卡片 --- */
+        .profile-card-header {
+            height: 140px; /* 背景图加高 */
+            background: linear-gradient(135deg, #3a7bd5, #00d2ff);
+        }
+
+        .profile-user-info {
+            padding: 0 30px 40px; /* 内边距加大 */
+            text-align: center;
+            position: relative;
+        }
+
+        .avatar-container {
+            width: 130px; /* 头像加大 */
+            height: 130px;
+            margin: -65px auto 20px;
+            position: relative;
+            cursor: pointer;
+            border-radius: 50%;
+            background: #fff;
+            padding: 5px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+        }
+
+        .profile-img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            background-color: #f0f0f0;
+        }
+
+        .avatar-overlay {
+            position: absolute;
+            top: 5px; left: 5px; right: 5px; bottom: 5px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .avatar-container:hover .avatar-overlay { opacity: 1; }
+
+        .user-name { font-size: 1.5rem; font-weight: 700; color: #333; margin-bottom: 8px; }
+        .user-role { font-size: 1rem; color: #666; margin-bottom: 25px; }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-size: 1rem; /* 字体加大 */
+            color: #555;
+            padding: 8px 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        .stat-item:last-child { border-bottom: none; }
+
+        /* --- 右侧表单 --- */
+        .card-header-custom {
+            background: #fff;
+            border-bottom: 1px solid #f0f0f0;
+            padding: 25px 35px; /* 头部加大 */
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .card-body-custom {
+            padding: 40px; /* 表单内边距加大 */
+        }
+
+        .form-control {
+            height: 50px; /* 输入框变高，更易点击 */
+            background-color: #fbfbfb;
+            border: 1px solid #e1e1e1;
+            font-size: 1rem;
+            border-radius: 8px;
+        }
+        .form-control:focus {
+            background-color: #fff;
+            border-color: #3a7bd5;
+            box-shadow: 0 0 0 0.2rem rgba(58, 123, 213, 0.15);
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #3a7bd5;
+            margin-bottom: 25px;
+            padding-left: 12px;
+            border-left: 4px solid #3a7bd5;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .loading-mask { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); z-index:999; display:flex; justify-content:center; align-items:center; }
     </style>
 </head>
 <body>
+
 <div id="loading" class="loading-mask">
-    <div class="spinner-border text-primary" role="status">
-        <span class="sr-only">Loading...</span>
-    </div>
+    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
 </div>
 
-<div class="container" id="main-content" style="display:none;">
+<div class="container-custom pt-5 pb-5" id="main-content" style="display:none;">
     <div class="row">
-        <div class="col-md-4">
-            <div class="profile-header">
-                <img src="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/svgs/solid/user-circle.svg" alt="Avatar" class="profile-img">
-                <h4 id="viewName">---</h4>
-                <p class="text-muted" id="viewRole">---</p>
-                <button class="btn btn-outline-primary btn-sm mt-2" onclick="alert('头像上传功能开发中')">更换头像</button>
-            </div>
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <h6 class="card-title font-weight-bold">账号状态</h6>
-                    <p class="mb-1">登录账号：<span class="text-muted float-right" id="viewUsername">---</span></p>
-                    <p class="mb-1">密码强度：<span class="text-success float-right">强</span></p>
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="profile-card-header"></div>
+                <div class="profile-user-info">
+                    <div class="avatar-container" onclick="document.getElementById('avatar_file_input').click()">
+                        <img src="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/svgs/solid/user-circle.svg"
+                             alt="Avatar" class="profile-img" id="avatarPreview">
+                        <div class="avatar-overlay">
+                            <span><i class="fas fa-camera mr-2"></i>更换头像</span>
+                        </div>
+                    </div>
+                    <input type="file" id="avatar_file_input" style="display: none;" accept="image/*" onchange="uploadAvatarFile()">
+
+                    <div class="user-name" id="viewName">---</div>
+                    <div class="user-role" id="viewRole">---</div>
+
+                    <div class="mt-4 text-left px-2">
+                        <div class="stat-item">
+                            <span><i class="fas fa-id-card mr-3 text-primary"></i>登录账号</span>
+                            <span class="font-weight-bold text-dark" id="viewUsername">---</span>
+                        </div>
+                        <div class="stat-item">
+                            <span><i class="fas fa-shield-alt mr-3 text-success"></i>账号状态</span>
+                            <span class="badge badge-success px-3 py-2">正常使用中</span>
+                        </div>
+                        <div class="stat-item">
+                            <span><i class="fas fa-building mr-3 text-info"></i>所属部门</span>
+                            <span id="viewDept">---</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-8">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white font-weight-bold py-3">
-                    <i class="fas fa-user-edit mr-2 text-primary"></i>基本资料
+        <div class="col-lg-8">
+            <div class="card h-100">
+                <div class="card-header-custom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-user-edit mr-3 text-primary"></i>我的详细档案</span>
+                    </div>
                 </div>
-                <div class="card-body">
+                <div class="card-body-custom">
                     <form id="profileForm">
+                        <input type="hidden" id="hiddenAvatarUrl">
+
+                        <div class="section-title">基础信息 (只读)</div>
                         <div class="form-row">
                             <div class="form-group col-md-6">
-                                <label>工号 <small class="text-muted">(不可修改)</small></label>
-                                <input type="text" class="form-control" id="inputEmpNo" readonly>
-                            </div>
-                            <div class="form-group col-md-6">
-                                <label>所属部门 <small class="text-muted">(不可修改)</small></label>
-                                <input type="text" class="form-control" id="inputDept" readonly>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group col-md-6">
-                                <label>真实姓名</label>
+                                <label class="text-muted mb-2">真实姓名</label>
                                 <input type="text" class="form-control" id="inputName" readonly>
                             </div>
                             <div class="form-group col-md-6">
-                                <label>职位头衔</label>
+                                <label class="text-muted mb-2">职位头衔</label>
                                 <input type="text" class="form-control" id="inputTitle" readonly>
                             </div>
                         </div>
-
-                        <hr>
-                        <h6 class="text-primary mb-3">联系方式 <small>(可修改)</small></h6>
-
-                        <div class="form-group">
-                            <label>手机号码</label>
-                            <input type="tel" class="form-control" id="inputPhone">
-                        </div>
-                        <div class="form-group">
-                            <label>电子邮箱</label>
-                            <input type="email" class="form-control" id="inputEmail">
-                        </div>
-                        <div class="form-group">
-                            <label>居住地址</label>
-                            <input type="text" class="form-control" id="inputAddress">
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label class="text-muted mb-2">员工工号</label>
+                                <input type="text" class="form-control" id="inputEmpNo" readonly>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label class="text-muted mb-2">入职日期</label>
+                                <input type="text" class="form-control" id="inputHireDate" readonly>
+                            </div>
                         </div>
 
-                        <button type="button" class="btn btn-primary" onclick="saveProfile()">保存修改</button>
+                        <div class="section-title mt-4">联系方式 (可编辑)</div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label class="font-weight-bold mb-2">手机号码</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text bg-light border-right-0"><i class="fas fa-mobile-alt text-muted fa-lg"></i></span>
+                                    </div>
+                                    <input type="tel" class="form-control border-left-0" id="inputPhone" placeholder="请输入手机号">
+                                </div>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label class="font-weight-bold mb-2">电子邮箱</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text bg-light border-right-0"><i class="far fa-envelope text-muted fa-lg"></i></span>
+                                    </div>
+                                    <input type="email" class="form-control border-left-0" id="inputEmail" placeholder="请输入邮箱">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-5 text-right">
+                            <button type="button" class="btn btn-primary btn-lg px-5 shadow" onclick="saveProfile()">
+                                <i class="fas fa-save mr-2"></i> 保存修改
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -90,7 +238,6 @@
 </div>
 
 <script>
-    // 辅助函数：获取Cookie
     function getCookie(name) {
         const value = `; ${document.cookie}`;
         const parts = value.split(`; ${name}=`);
@@ -104,7 +251,6 @@
             return;
         }
 
-        // 发送请求时带上 username
         fetch('/api/profile/info?username=' + username)
             .then(res => res.json())
             .then(data => {
@@ -113,32 +259,71 @@
 
                 if (data.success && data.data) {
                     const d = data.data;
-                    // 绑定数据到页面
-                    document.getElementById('viewName').innerText = d.emp_name;
-                    document.getElementById('viewRole').innerText = d.title_name || '员工';
-                    document.getElementById('viewUsername').innerText = username;
 
+                    // 左侧大卡片数据
+                    document.getElementById('viewName').innerText = d.emp_name || '未命名';
+                    document.getElementById('viewRole').innerText = d.title_name || '普通员工';
+                    document.getElementById('viewUsername').innerText = username;
+                    document.getElementById('viewDept').innerText = d.dept_name || '暂无';
+
+                    // 表单数据
                     document.getElementById('inputEmpNo').value = d.emp_no;
-                    document.getElementById('inputDept').value = d.dept_name || '';
                     document.getElementById('inputName').value = d.emp_name;
-                    document.getElementById('inputTitle').value = d.title_name || '';
+                    document.getElementById('inputTitle').value = d.title_name || '暂无';
+                    document.getElementById('inputHireDate').value = d.hire_date ? d.hire_date.split(' ')[0] : '-';
 
                     document.getElementById('inputPhone').value = d.emp_phone || '';
                     document.getElementById('inputEmail').value = d.emp_email || '';
-                    document.getElementById('inputAddress').value = d.emp_address || '';
+
+                    // 头像
+                    if (d.avatar) {
+                        document.getElementById('avatarPreview').src = d.avatar;
+                        document.getElementById('hiddenAvatarUrl').value = d.avatar;
+                    }
                 } else {
-                    // 如果是管理员账号(admin)，可能在employee表里没数据，这是正常的
-                    alert('未查询到员工档案(如果您是管理员，这是正常的)');
+                    alert('未查询到员工档案');
                 }
-            });
+            })
+            .catch(err => console.error(err));
     });
+
+    function uploadAvatarFile() {
+        const fileInput = document.getElementById('avatar_file_input');
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const img = document.getElementById('avatarPreview');
+        const originalSrc = img.src;
+        img.style.opacity = 0.5;
+
+        fetch('/api/profile/upload_avatar', { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(res => {
+                img.style.opacity = 1;
+                if (res.success) {
+                    img.src = res.data;
+                    document.getElementById('hiddenAvatarUrl').value = res.data;
+                } else {
+                    alert('上传失败：' + res.msg);
+                    img.src = originalSrc;
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                img.style.opacity = 1;
+            });
+    }
 
     function saveProfile() {
         const data = {
             emp_no: document.getElementById('inputEmpNo').value,
             emp_phone: document.getElementById('inputPhone').value,
             emp_email: document.getElementById('inputEmail').value,
-            emp_address: document.getElementById('inputAddress').value
+            // 提交头像
+            avatar: document.getElementById('hiddenAvatarUrl').value
         };
 
         fetch('/api/profile/update', {
@@ -146,7 +331,11 @@
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(data)
         }).then(r => r.json()).then(res => {
-            alert(res.msg);
+            if(res.success){
+                alert("保存成功！");
+            } else {
+                alert("保存失败：" + res.msg);
+            }
         });
     }
 </script>

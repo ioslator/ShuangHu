@@ -5,63 +5,80 @@
     <title>提交请假申请</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 
     <style>
-        body { background-color: #f0f2f5; display: flex; justify-content: center; padding-top: 50px; }
-        .form-container {
-            background: white;
-            padding: 30px;
-            width: 500px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        .form-title { text-align: center; margin-bottom: 25px; color: #333; font-weight: bold; }
+        body { background-color: #f4f6f9; padding-bottom: 30px; }
+        .card { border: none; border-radius: 0.75rem; box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05); margin-top: 1.5rem; overflow: hidden; }
+        .card-header { background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; padding: 1.2rem 1.5rem; }
+        .card-header h4 { font-weight: 600; font-size: 1.25rem; margin: 0; }
+        .form-control { border-radius: 0.4rem; height: calc(2.8rem + 2px); }
+        textarea.form-control { height: auto; padding-top: 10px; }
+        label { font-weight: 600; color: #495057; }
+        .btn-submit { border-radius: 50px; padding: 12px 40px; font-weight: 600; box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3); transition: all 0.3s; }
+        .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0, 123, 255, 0.4); }
     </style>
 </head>
 <body>
 
-<div id="app">
-    <div class="form-container">
-        <h3 class="form-title">📝 员工请假申请</h3>
+<div id="app" class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-xl-9">
+            <div class="card shadow-lg">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4><i class="fas fa-file-signature mr-2"></i> 员工请假申请单</h4>
+                    <span class="badge badge-light text-primary badge-pill px-3 py-2">Workflow</span>
+                </div>
 
-        <form @submit.prevent="submitLeave">
-            <div class="form-group">
-                <label>员工 ID (工号)</label>
-                <input type="number" v-model="form.emp_id" class="form-control" placeholder="请输入你的员工编号" required>
+                <div class="card-body p-5">
+                    <form @submit.prevent="submitLeave">
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label><i class="fas fa-id-card text-secondary mr-1"></i> 员工 ID (工号)</label>
+                                <input type="number" v-model="form.emp_id" class="form-control" placeholder="请输入你的员工编号" required>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label><i class="fas fa-tag text-info mr-1"></i> 请假类型</label>
+                                <select v-model="form.leave_type" class="form-control" required>
+                                    <option disabled value="">请选择类型</option>
+                                    <option value="1">事假 (Personal Leave)</option>
+                                    <option value="2">病假 (Sick Leave)</option>
+                                    <option value="3">年假 (Annual Leave)</option>
+                                    <option value="4">调休 (Compensatory Leave)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label><i class="far fa-calendar-alt text-warning mr-1"></i> 开始日期</label>
+                                <input type="date" v-model="form.leave_date" class="form-control" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group mt-3">
+                            <label><i class="fas fa-pen text-primary mr-1"></i> 请假详细事由</label>
+                            <textarea
+                                    v-model="form.leave_reason"
+                                    class="form-control"
+                                    rows="5"
+                                    maxlength="255"
+                                    placeholder="请输入详细的请假理由，以便审批..."
+                                    required
+                            ></textarea>
+                            <small class="text-muted float-right mt-1">{{ form.leave_reason.length }}/255 字</small>
+                        </div>
+
+                        <div class="text-center mt-5">
+                            <button type="submit" class="btn btn-primary btn-submit">
+                                <i class="fas fa-paper-plane mr-2"></i> 提交申请
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
-
-            <div class="form-group">
-                <label>请假类型</label>
-                <select v-model="form.leave_type" class="form-control" required>
-                    <option disabled value="">请选择类型</option>
-                    <option value="1">事假</option>
-                    <option value="2">病假</option>
-                    <option value="3">年假</option>
-                    <option value="4">调休</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>请假日期</label>
-                <input type="date" v-model="form.leave_date" class="form-control" required>
-            </div>
-
-            <div class="form-group">
-                <label>请假事由</label>
-                <textarea
-                        v-model="form.leave_reason"
-                        class="form-control"
-                        rows="4"
-                        maxlength="255"
-                        placeholder="请输入详细的请假理由..."
-                        required
-                ></textarea>
-                <small class="text-muted float-right">{{ form.leave_reason.length }}/255</small>
-            </div>
-
-            <button type="submit" class="btn btn-primary btn-block mt-4">提交申请</button>
-        </form>
+        </div>
     </div>
 </div>
 
@@ -71,43 +88,29 @@
     createApp({
         data() {
             return {
-                form: {
-                    emp_id: '',
-                    leave_type: '',
-                    leave_date: '',
-                    leave_reason: ''
-                }
+                form: { emp_id: '', leave_type: '', leave_date: '', leave_reason: '' }
             }
         },
         methods: {
             submitLeave() {
-                // 简单的表单校验
                 if (!this.form.emp_id || !this.form.leave_type || !this.form.leave_date) {
                     alert("请填写完整信息！");
                     return;
                 }
-
-                // 构造发送给后端的数据
-                // 注意：后端需要 status 默认为 0，但这个可以在后端处理，也可以在这里传
                 const payload = {
                     emp_id: Number(this.form.emp_id),
                     leave_type: Number(this.form.leave_type),
                     leave_date: this.form.leave_date,
                     leave_reason: this.form.leave_reason,
-                    status: 0 // 默认为待审批
+                    status: 0
                 };
-
-                // 发送请求
                 axios.post('/api/leave/apply', payload)
                     .then(res => {
-                        // ✅ 修改点 1：后端用的是 boolean 类型的 success，不是 code
                         if (res.data.success === true) {
                             alert("申请提交成功！请等待管理员审批。");
-                            // 清空表单
                             this.form.leave_reason = '';
                             this.form.leave_date = '';
                         } else {
-                            // ✅ 修改点 2：后端字段叫 message，不是 msg
                             alert("提交失败: " + res.data.message);
                         }
                     })

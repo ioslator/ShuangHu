@@ -2,164 +2,284 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>公告管理</title>
+    <title>系统公告列表</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
-    <style>body{padding:20px;background:#f8f9fa;} .btn-action{margin-right: 5px;}</style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body {
+            background-color: #f0f2f5;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #3a7bd5, #00d2ff);
+            color: white;
+            padding: 1.2rem 1.5rem;
+            border-bottom: none;
+        }
+
+        .table thead th {
+            border-top: none;
+            border-bottom: 2px solid #e9ecef;
+            background-color: #f8f9fa;
+            color: #495057;
+            font-weight: 600;
+        }
+        .table tbody td {
+            vertical-align: middle;
+            color: #555;
+            border-top: 1px solid #f0f0f0;
+        }
+        .table-hover tbody tr:hover {
+            background-color: #fdfdfd;
+        }
+
+        .badge-dept {
+            background-color: #e3f2fd;
+            color: #0d47a1;
+            font-weight: 500;
+        }
+
+        .search-input {
+            border-radius: 20px;
+            padding-left: 20px;
+            border: 1px solid #e0e0e0;
+        }
+
+        /* 按钮组样式 */
+        .btn-action {
+            margin: 0 2px;
+        }
+
+        .loading-mask { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:999; display:flex; justify-content:center; align-items:center; }
+    </style>
 </head>
 <body>
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4>公告列表</h4>
-        <a href="notice_publish.html" class="btn btn-success btn-sm">发布新公告</a>
-    </div>
 
+<div id="loading" class="loading-mask">
+    <div class="spinner-border text-primary" role="status"></div>
+</div>
+
+<div class="container-fluid" id="main-content" style="display:none;">
     <div class="card">
-        <div class="card-body p-0">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-bullhorn mr-2"></i> 系统公告列表</h5>
+                <span class="badge badge-light badge-pill text-primary px-3 py-1" id="totalBadge">共 0 条</span>
+            </div>
+        </div>
+
+        <div class="card-body border-bottom py-3 bg-light">
+            <div class="row">
+                <div class="col-md-5">
+                    <div class="input-group">
+                        <input type="text" class="form-control search-input" id="searchInput" placeholder="请输入公告标题关键字...">
+                        <div class="input-group-append">
+                            <button class="btn btn-primary rounded-pill ml-2 px-4" onclick="loadNotices()">
+                                <i class="fas fa-search"></i> 查询
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
             <table class="table table-hover mb-0">
-                <thead class="bg-light">
+                <thead>
                 <tr>
-                    <th style="width: 50px;">ID</th>
-                    <th>标题</th>
+                    <th class="pl-4">序号</th>
+                    <th>公告标题</th>
                     <th>发布部门</th>
                     <th>发布时间</th>
-                    <th style="width: 250px;">操作</th>
+                    <th class="text-center">状态</th>
+                    <th class="text-center" style="width: 200px;">操作</th>
                 </tr>
                 </thead>
-                <tbody id="noticeList">
-                </tbody>
+                <tbody id="noticeTableBody"></tbody>
             </table>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="noticeModal" tabindex="-1">
+<div class="modal fade" id="detailModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="modalTitle">公告详情</h5>
+                <h5 class="modal-title">公告详情</h5>
                 <button type="button" class="close" data-dismiss="modal">&times;</button>
             </div>
-            <div class="modal-body">
-                <form id="noticeForm">
-                    <input type="hidden" id="noticeId">
-                    <div class="form-group">
-                        <label>公告标题</label>
-                        <input type="text" class="form-control" id="inputTitle">
-                    </div>
-                    <div class="form-group">
-                        <label>发布部门</label>
-                        <input type="text" class="form-control" id="inputDept">
-                    </div>
-                    <div class="form-group">
-                        <label>公告内容</label>
-                        <textarea class="form-control" id="inputContent" rows="8"></textarea>
-                    </div>
-                </form>
+            <div class="modal-body p-4">
+                <h4 class="text-center mb-3" id="viewTitle"></h4>
+                <div class="text-center text-muted small mb-4 pb-2 border-bottom">
+                    <span class="mr-3"><i class="far fa-building mr-1"></i> <span id="viewDept"></span></span>
+                    <span><i class="far fa-clock mr-1"></i> <span id="viewTime"></span></span>
+                </div>
+                <div id="viewContent" class="px-2"></div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
-                <button type="button" class="btn btn-primary" id="btnSave" onclick="saveNotice()" style="display:none;">保存修改</button>
             </div>
         </div>
     </div>
 </div>
 
-<script>
-    // 页面加载
-    loadList();
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title"><i class="fas fa-edit mr-2 text-primary"></i>编辑公告</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <input type="hidden" id="editId">
+                    <div class="form-group">
+                        <label>公告标题</label>
+                        <input type="text" class="form-control" id="editTitle" required>
+                    </div>
+                    <div class="form-group">
+                        <label>发布部门</label>
+                        <input type="text" class="form-control" id="editDept" placeholder="例如：总经办">
+                    </div>
+                    <div class="form-group">
+                        <label>公告内容</label>
+                        <textarea class="form-control" id="editContent" rows="6"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="submitEdit()">保存修改</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-    function loadList() {
-        fetch('/api/notice/list')
-            .then(r => r.json())
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        loadNotices();
+    });
+
+    // ✅ 加载列表（支持搜索）
+    function loadNotices() {
+        const keyword = document.getElementById('searchInput').value || '';
+        const tbody = document.getElementById('noticeTableBody');
+
+        // 调用我们刚刚修改的 Controller 接口
+        fetch('/api/notice/list?keyword=' + keyword)
+            .then(res => res.json())
             .then(res => {
-                if(res.success && res.data){
-                    const html = res.data.map(i => `
-                        <tr>
-                            <td>${i.notice_id}</td>
-                            <td><a href="javascript:void(0)" onclick="viewNotice(${i.notice_id})"><b>${i.notice_title}</b></a></td>
-                            <td>${i.publish_dept || '系统'}</td>
-                            <td>${i.create_time ? i.create_time.replace('T',' ') : ''}</td>
-                            <td>
-                                <button class="btn btn-info btn-sm btn-action" onclick="viewNotice(${i.notice_id})">查看</button>
-                                <button class="btn btn-primary btn-sm btn-action" onclick="editNotice(${i.notice_id})">编辑</button>
-                                <button class="btn btn-danger btn-sm btn-action" onclick="deleteNotice(${i.notice_id})">删除</button>
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('main-content').style.display = 'block';
+                tbody.innerHTML = '';
+
+                if (res.success && res.data && res.data.length > 0) {
+                    document.getElementById('totalBadge').innerText = `共 ${res.data.length} 条`;
+
+                    res.data.forEach((item, index) => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="pl-4 text-muted">${index + 1}</td>
+                            <td><span class="font-weight-bold text-dark">${item.notice_title}</span></td>
+                            <td><span class="badge badge-dept">${item.publish_dept || '公司'}</span></td>
+                            <td>${formatDate(item.create_time)}</td>
+                            <td class="text-center"><span class="badge badge-success">正常</span></td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-info btn-action" onclick="viewDetail(${item.notice_id})">
+                                    <i class="far fa-eye"></i> 查看
+                                </button>
+                                <button class="btn btn-sm btn-primary btn-action" onclick="openEditModal(${item.notice_id})">
+                                    <i class="fas fa-edit"></i> 编辑
+                                </button>
                             </td>
-                        </tr>
-                    `).join('');
-                    document.getElementById('noticeList').innerHTML = html;
+                        `;
+                        tbody.appendChild(tr);
+                    });
                 } else {
-                    document.getElementById('noticeList').innerHTML = '<tr><td colspan="5" class="text-center">暂无数据</td></tr>';
+                    document.getElementById('totalBadge').innerText = `共 0 条`;
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">未找到匹配的公告</td></tr>';
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">加载失败</td></tr>';
+            });
+    }
+
+    // ✅ 查看功能
+    function viewDetail(id) {
+        fetch('/api/notice/get?id=' + id)
+            .then(res => res.json())
+            .then(res => {
+                if(res.success && res.data) {
+                    const d = res.data;
+                    document.getElementById('viewTitle').innerText = d.notice_title;
+                    document.getElementById('viewDept').innerText = d.publish_dept || '未知部门';
+                    document.getElementById('viewTime').innerText = formatDate(d.create_time);
+                    document.getElementById('viewContent').innerText = d.notice_content; // 使用innerText防止XSS，如果是富文本用innerHTML
+                    $('#detailModal').modal('show');
                 }
             });
     }
 
-    // 查看详情
-    function viewNotice(id) {
-        fetch('/api/notice/detail?id=' + id)
-            .then(r => r.json())
+    // ✅ 打开编辑窗口（回显数据）
+    function openEditModal(id) {
+        fetch('/api/notice/get?id=' + id)
+            .then(res => res.json())
             .then(res => {
-                const d = res.data;
-                fillModal(d, '公告详情');
-                setReadOnly(true);
-                $('#btnSave').hide();
-                $('#noticeModal').modal('show');
+                if(res.success && res.data) {
+                    const d = res.data;
+                    document.getElementById('editId').value = d.notice_id;
+                    document.getElementById('editTitle').value = d.notice_title;
+                    document.getElementById('editDept').value = d.publish_dept || '';
+                    document.getElementById('editContent').value = d.notice_content;
+                    $('#editModal').modal('show');
+                } else {
+                    alert('获取数据失败');
+                }
             });
     }
 
-    // 编辑
-    function editNotice(id) {
-        fetch('/api/notice/detail?id=' + id)
-            .then(r => r.json())
-            .then(res => {
-                const d = res.data;
-                fillModal(d, '编辑公告');
-                setReadOnly(false);
-                $('#btnSave').show();
-                $('#noticeModal').modal('show');
-            });
-    }
-
-    // 保存修改 (关键：这里构建的 JSON 对象 key 必须和 Java 字段一致)
-    function saveNotice() {
+    // ✅ 提交编辑
+    function submitEdit() {
         const data = {
-            notice_id: document.getElementById('noticeId').value,
-            notice_title: document.getElementById('inputTitle').value,
-            publish_dept: document.getElementById('inputDept').value,
-            notice_content: document.getElementById('inputContent').value
+            notice_id: document.getElementById('editId').value,
+            notice_title: document.getElementById('editTitle').value,
+            publish_dept: document.getElementById('editDept').value,
+            notice_content: document.getElementById('editContent').value
         };
 
         fetch('/api/notice/update', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(data)
-        }).then(r => r.json()).then(res => {
-            if(res.success){ alert('保存成功'); $('#noticeModal').modal('hide'); loadList(); }
-        });
+        })
+            .then(res => res.json())
+            .then(res => {
+                if(res.success) {
+                    alert('修改成功！');
+                    $('#editModal').modal('hide');
+                    loadNotices(); // 刷新列表
+                } else {
+                    alert('修改失败：' + res.msg);
+                }
+            });
     }
 
-    // 删除
-    function deleteNotice(id) {
-        if(confirm('确定删除?')) {
-            fetch('/api/notice/delete?id=' + id, { method: 'POST' })
-                .then(r => r.json()).then(res => { if(res.success) loadList(); });
-        }
-    }
-
-    // 数据回填 (字段名修正)
-    function fillModal(d, title) {
-        document.getElementById('modalTitle').innerText = title;
-        document.getElementById('noticeId').value = d.notice_id;
-        document.getElementById('inputTitle').value = d.notice_title;
-        document.getElementById('inputDept').value = d.publish_dept;
-        document.getElementById('inputContent').value = d.notice_content;
-    }
-
-    function setReadOnly(state) {
-        document.getElementById('inputTitle').readOnly = state;
-        document.getElementById('inputDept').readOnly = state;
-        document.getElementById('inputContent').readOnly = state;
+    function formatDate(str) {
+        if(!str) return '-';
+        return str.replace('T', ' ').split('.')[0];
     }
 </script>
 </body>

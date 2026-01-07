@@ -13,7 +13,7 @@ import java.util.Map;
 @Mapper
 public interface EmployeeMapper extends BaseMapper<Employee> {
 
-    // 1. 员工列表搜索 (之前写的，保持不变)
+    // 1. 列表搜索 (保持不变)
     @Select("<script>" +
             "SELECT e.*, d.dept_name, t.title_name " +
             "FROM employee e " +
@@ -27,8 +27,7 @@ public interface EmployeeMapper extends BaseMapper<Employee> {
             "</script>")
     List<Map<String, Object>> searchEmployees(@Param("keyword") String keyword);
 
-    // 2. ✅ 新增：个人信息查询 (修复 findProfileByUsername 报错)
-    // 逻辑：通过 sys_user 表的 username 找到 emp_id，再查 employee 表
+    // 2. 个人信息查询 (保持不变)
     @Select("SELECT e.*, d.dept_name, t.title_name " +
             "FROM employee e " +
             "INNER JOIN sys_user u ON e.emp_id = u.emp_id " +
@@ -37,12 +36,10 @@ public interface EmployeeMapper extends BaseMapper<Employee> {
             "WHERE u.username = #{username}")
     Map<String, Object> findProfileByUsername(@Param("username") String username);
 
-    // 3. ✅ 新增：更新联系方式 (修复 updateContact 报错)
-    // 注意：你的 Employee 实体类里好像没有 address 字段，所以这里暂时只更新 phone 和 email
-    // 如果你数据库表里确实有 address 字段，可以把 ", address = #{address}" 加到 SQL 里
-    @Update("UPDATE employee SET emp_phone = #{phone}, emp_email = #{email} WHERE emp_no = #{empNo}")
+    // 3. ✅ 更新联系方式 (删除了 address，加上了 avatar)
+    @Update("UPDATE employee SET emp_phone = #{phone}, emp_email = #{email}, avatar = #{avatar} WHERE emp_no = #{empNo}")
     void updateContact(@Param("empNo") String empNo,
                        @Param("phone") String phone,
                        @Param("email") String email,
-                       @Param("address") String address);
+                       @Param("avatar") String avatar);
 }

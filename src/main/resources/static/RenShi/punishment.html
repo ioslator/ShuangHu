@@ -4,27 +4,68 @@
     <meta charset="UTF-8">
     <title>处分记录</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
-    <style>body{padding:20px;background:#f8f9fa;}</style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body { background-color: #f4f6f9; padding-bottom: 30px; }
+        .card { border: none; border-radius: 0.75rem; box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05); margin-top: 1.5rem; overflow: hidden; }
+        .card-header { background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; padding: 1.2rem 1.5rem; }
+        .card-header h4 { font-weight: 600; font-size: 1.25rem; margin: 0; }
+        .table-custom th { background-color: #f8f9fa; border-top: none; padding: 1rem; }
+        .table-custom td { vertical-align: middle; padding: 1rem; }
+        .table-custom tr:hover { background-color: #fdfdfd; }
+    </style>
 </head>
 <body>
 <div class="container-fluid">
-    <h4 class="mb-3 text-danger">处分记录</h4>
-    <div class="card"><div class="card-body p-0">
-        <table class="table table-hover mb-0">
-            <thead class="bg-light">
-            <tr><th>员工ID</th><th>处分类型</th><th>原因</th><th>罚款金额</th><th>日期</th></tr>
-            </thead>
-            <tbody id="list"></tbody>
-        </table>
-    </div></div>
+    <div class="card shadow-lg">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4><i class="fas fa-exclamation-triangle mr-2"></i> 员工处分记录</h4>
+            <span class="badge badge-light text-primary badge-pill px-3 py-2">Punishment Records</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-custom mb-0">
+                    <thead>
+                    <tr>
+                        <th class="pl-4">员工ID</th>
+                        <th>处分类型</th>
+                        <th>详细原因</th>
+                        <th>罚款金额</th>
+                        <th>处理日期</th>
+                    </tr>
+                    </thead>
+                    <tbody id="list">
+                    <tr><td colspan="5" class="text-center py-5 text-muted">正在加载数据...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 <script>
-    fetch('/api/punishments').then(r=>r.json()).then(data=>{
-        const typeMap = {1:'警告',2:'罚款',3:'开除'};
-        // ✅ 这里改成 i.emp_id
-        const html = data.map(i=>`<tr><td>${i.emp_id}</td><td>${typeMap[i.punish_type]||'其他'}</td><td>${i.punish_reason}</td><td>￥${i.punish_amount}</td><td>${i.punish_date}</td></tr>`).join('');
-        document.getElementById('list').innerHTML = html || '<tr><td colspan="5" class="text-center">暂无处分记录</td></tr>';
-    });
+    fetch('/api/punishments')
+        .then(r => r.json())
+        .then(data => {
+            const typeMap = {1:'<span class="badge badge-warning">警告</span>', 2:'<span class="badge badge-danger">罚款</span>', 3:'<span class="badge badge-dark">开除</span>'};
+            const tbody = document.getElementById('list');
+            if(!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted"><i class="fas fa-folder-open fa-3x mb-3 d-block text-light-gray"></i>暂无处分记录</td></tr>';
+                return;
+            }
+            const html = data.map(i => `
+                <tr>
+                    <td class="pl-4 font-weight-bold text-dark">${i.emp_id}</td>
+                    <td>${typeMap[i.punish_type] || '其他'}</td>
+                    <td class="text-secondary">${i.punish_reason}</td>
+                    <td class="font-weight-bold text-danger">￥${i.punish_amount}</td>
+                    <td>${i.punish_date}</td>
+                </tr>
+            `).join('');
+            tbody.innerHTML = html;
+        })
+        .catch(err => {
+            document.getElementById('list').innerHTML = '<tr><td colspan="5" class="text-center text-danger py-4">加载失败</td></tr>';
+        });
 </script>
 </body>
 </html>

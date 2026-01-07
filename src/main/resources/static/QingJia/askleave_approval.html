@@ -5,66 +5,73 @@
     <title>请假审批</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
-        body { background-color: #f4f6f9; padding: 20px; }
-        .card { border: none; box-shadow: 0 2px 12px 0 rgba(0,0,0,.1); }
-        .badge-pending { background-color: #e6a23c; color: white; }
-        .badge-success { background-color: #67c23a; color: white; }
-        .badge-danger { background-color: #f56c6c; color: white; }
+        body { background-color: #f4f6f9; padding-bottom: 30px; }
+        .card { border: none; border-radius: 0.75rem; box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05); margin-top: 1.5rem; overflow: hidden; }
+        .card-header { background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; padding: 1.2rem 1.5rem; }
+        .card-header h4 { font-weight: 600; font-size: 1.25rem; margin: 0; }
+
+        .table-custom th { background-color: #f8f9fa; border-top: none; border-bottom: 2px solid #e9ecef; font-weight: 600; padding: 1rem; }
+        .table-custom td { vertical-align: middle; padding: 1rem; border-top: 1px solid #f1f1f1; }
+        .table-custom tr:hover { background-color: #fdfdfd; }
+
+        .badge-pending { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        .badge-success-custom { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .badge-danger-custom { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .badge-pill { padding: 0.5em 0.8em; }
     </style>
 </head>
 <body>
 
 <div id="app" class="container-fluid">
-    <div class="card">
-        <div class="card-header bg-white font-weight-bold">
-            📋 员工请假审批列表
+    <div class="card shadow-lg">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4><i class="fas fa-clipboard-check mr-2"></i> 员工请假审批</h4>
+            <span class="badge badge-light text-primary badge-pill px-3 py-2">Admin Approval</span>
         </div>
         <div class="card-body p-0">
-            <table class="table table-hover mb-0">
-                <thead class="thead-light">
-                <tr>
-                    <th>ID</th>
-                    <th>员工ID</th>
-                    <th>请假类型</th>
-                    <th>请假原因</th>
-                    <th>日期</th>
-                    <th>状态</th>
-                    <th>操作</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr v-for="item in list" :key="item.leave_id">
-                    <td>{{ item.leave_id }}</td>
-                    <td>{{ item.emp_id }}</td>
-
-                    <td>
-                        <span class="badge badge-info">{{ formatType(item.leave_type) }}</span>
-                    </td>
-
-                    <td style="max-width: 300px;">{{ item.leave_reason }}</td>
-                    <td>{{ item.leave_date }}</td>
-
-                    <td>
-                        <span v-if="item.status === 0" class="badge badge-pending">待审批</span>
-                        <span v-else-if="item.status === 1" class="badge badge-success">已通过</span>
-                        <span v-else class="badge badge-danger">已驳回</span>
-                    </td>
-
-                    <td>
-                        <div v-if="item.status === 0">
-                            <button class="btn btn-sm btn-success mr-2" @click="audit(item, 1)">通过</button>
-                            <button class="btn btn-sm btn-danger" @click="audit(item, 2)">驳回</button>
-                        </div>
-                        <span v-else class="text-muted small">已处理</span>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-
-            <div v-if="list.length === 0" class="text-center p-5 text-muted">
-                暂无请假数据 (请检查数据库或后端连接)
+            <div class="table-responsive">
+                <table class="table table-hover table-custom mb-0">
+                    <thead>
+                    <tr>
+                        <th class="pl-4">ID</th>
+                        <th>员工ID</th>
+                        <th>类型</th>
+                        <th>请假事由</th>
+                        <th>日期</th>
+                        <th>当前状态</th>
+                        <th class="text-center">操作</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr v-for="item in list" :key="item.leave_id">
+                        <td class="pl-4 text-muted">#{{ item.leave_id }}</td>
+                        <td class="font-weight-bold text-dark">{{ item.emp_id }}</td>
+                        <td><span class="badge badge-info">{{ formatType(item.leave_type) }}</span></td>
+                        <td style="max-width: 350px;" class="text-secondary">{{ item.leave_reason }}</td>
+                        <td>{{ item.leave_date }}</td>
+                        <td>
+                            <span v-if="item.status === 0" class="badge badge-pill badge-pending">待审批</span>
+                            <span v-else-if="item.status === 1" class="badge badge-pill badge-success-custom">已通过</span>
+                            <span v-else class="badge badge-pill badge-danger-custom">已驳回</span>
+                        </td>
+                        <td class="text-center">
+                            <div v-if="item.status === 0">
+                                <button class="btn btn-sm btn-success shadow-sm mr-2" @click="audit(item, 1)"><i class="fas fa-check"></i> 通过</button>
+                                <button class="btn btn-sm btn-danger shadow-sm" @click="audit(item, 2)"><i class="fas fa-times"></i> 驳回</button>
+                            </div>
+                            <span v-else class="text-muted small"><i class="fas fa-lock"></i> 归档</span>
+                        </td>
+                    </tr>
+                    <tr v-if="list.length === 0">
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="fas fa-inbox fa-3x mb-3 d-block text-light-gray"></i> 暂无待处理的请假申请
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -74,56 +81,26 @@
     const { createApp } = Vue
 
     createApp({
-        data() {
-            return {
-                list: [] // 接收后端数据
-            }
-        },
-        mounted() {
-            // 页面加载完成后自动请求数据
-            this.fetchData();
-        },
+        data() { return { list: [] } },
+        mounted() { this.fetchData(); },
         methods: {
             fetchData() {
                 axios.get('/api/leave/list')
                     .then(res => {
-                        console.log("收到数据:", res.data);
-                        // ✅ 关键修改：用 success 判断，而不是 code
-                        if (res.data.success) {
-                            this.list = res.data.data;
-                        } else {
-                            alert("获取数据失败: " + res.data.message);
-                        }
+                        if (res.data.success) { this.list = res.data.data; }
+                        else { alert("获取数据失败: " + res.data.message); }
                     })
-                    .catch(err => {
-                        console.error(err);
-                        alert("网络请求错误，请按F12检查控制台");
-                    });
+                    .catch(err => { console.error(err); });
             },
-
-            // 审批操作
             audit(item, status) {
-                if(!confirm(status === 1 ? "确定通过吗？" : "确定驳回吗？")) return;
-
-                // 构造更新对象，只传必要的字段
-                const payload = {
-                    leave_id: item.leave_id,
-                    status: status,
-                    operator_id: 8888 // 模拟管理员ID
-                };
-
+                if(!confirm(status === 1 ? "确定批准该申请吗？" : "确定驳回该申请吗？")) return;
+                const payload = { leave_id: item.leave_id, status: status, operator_id: 8888 };
                 axios.post('/api/leave/audit', payload)
                     .then(res => {
-                        // ✅ 关键修改：审批也是用 success 判断
-                        if (res.data.success) {
-                            alert("操作成功");
-                            this.fetchData(); // 刷新列表
-                        } else {
-                            alert("操作失败: " + res.data.message);
-                        }
+                        if (res.data.success) { alert("操作成功"); this.fetchData(); }
+                        else { alert("操作失败: " + res.data.message); }
                     });
             },
-
             formatType(type) {
                 const map = { 1: '事假', 2: '病假', 3: '年假', 4: '调休' };
                 return map[type] || '其他';
@@ -131,6 +108,5 @@
         }
     }).mount('#app')
 </script>
-
 </body>
 </html>
