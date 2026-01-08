@@ -5,15 +5,15 @@
     <title>用户注册 - 双虎人事</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <style>
-        /* 简单样式，保持和登录页一致的风格 */
         body { margin: 0; padding: 0; height: 100vh; display: flex; justify-content: center; align-items: center; background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%); font-family: sans-serif; }
-        .card { background: white; padding: 40px; border-radius: 10px; width: 350px; text-align: center; }
+        .card { background: white; padding: 40px; border-radius: 10px; width: 350px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .input-group { margin-bottom: 15px; text-align: left; }
         .input-group label { display: block; margin-bottom: 5px; color: #666; font-size: 14px; }
         .input-field { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        .btn { width: 100%; padding: 10px; background: #4facfe; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        .btn { width: 100%; padding: 10px; background: #4facfe; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin-top: 10px; }
         .btn:hover { background: #00f2fe; }
-        .link { margin-top: 15px; display: block; color: #666; text-decoration: none; font-size: 14px; }
+        .link { margin-top: 20px; display: block; color: #666; text-decoration: none; font-size: 14px; }
+        .link:hover { color: #4facfe; }
         .error { color: red; font-size: 12px; margin-top: 5px; }
     </style>
 </head>
@@ -34,7 +34,7 @@
 
         <div class="input-group">
             <label>关联员工工号 (选填)</label>
-            <input type="text" v-model="form.emp_id" class="input-field" placeholder="如果您是内部员工请填写ID">
+            <input type="text" v-model="form.emp_id" class="input-field" placeholder="内部员工请填写ID">
         </div>
 
         <button class="btn" @click="handleRegister" :disabled="loading">
@@ -43,7 +43,7 @@
 
         <p class="error">{{ message }}</p>
 
-        <a href="login.html" class="link">已有账号？去登录</a>
+        <a href="login.html" class="link">已有账号？返回登录</a>
     </div>
 </div>
 
@@ -67,7 +67,6 @@
                 }
                 loading.value = true;
 
-                // 发送注册请求
                 fetch('/api/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -76,11 +75,11 @@
                     .then(res => res.json())
                     .then(res => {
                         loading.value = false;
-                        if(res.code === 0) { // 假设 Result.success 返回 code 0
-                            alert("注册成功！即将跳转登录页");
-                            window.location.href = "login.html"; // 注册成功跳回登录
+                        if(res.code === 0 || res.success) {
+                            alert("注册成功！点击确定跳转登录页");
+                            window.location.href = "login.html";
                         } else {
-                            message.value = res.msg || "注册失败";
+                            message.value = res.msg || res.message || "注册失败";
                         }
                     })
                     .catch(err => {
